@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Journeys">
+  <meta name="application-name" content="Journey Tracker">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="description" content="Track and record your journeys with GPS">
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon-192.svg">
+  <link rel="apple-touch-icon" href="./icons/icon-192.svg">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://tile.openstreetmap.org">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+  <title>Journey Tracker</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===== MAP VIEW ===== -->
+    <div id="map-view" class="page active">
+      <div id="map"></div>
+      <button class="map-locate-btn" id="locate-btn" aria-label="Locate me">
+        <svg viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+      </button>
+      <div class="gps-accuracy" id="gps-accuracy" style="display:none">
+        <span class="accuracy-dot high" id="accuracy-dot"></span>
+        <span id="accuracy-text">GPS: High</span>
+      </div>
+      <div class="map-controls">
+        <div class="live-stats" id="live-stats" style="display:none">
+          <div class="live-stat">
+            <div class="live-stat-value" id="live-distance">0.00</div>
+            <div class="live-stat-label">km</div>
+          </div>
+          <div class="live-stat-divider"></div>
+          <div class="live-stat">
+            <div class="live-stat-value" id="live-time">00:00</div>
+            <div class="live-stat-label">time</div>
+          </div>
+          <div class="live-stat-divider"></div>
+          <div class="live-stat">
+            <div class="live-stat-value" id="live-speed">0.0</div>
+            <div class="live-stat-label">km/h</div>
+          </div>
+        </div>
+        <button class="tracking-btn start" id="track-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:6px"><path d="M8 5v14l11-7z"/></svg>
+          Start Tracking
+        </button>
+        <button class="btn btn-icon" id="photo-btn" style="width:44px;height:44px;border-radius:50%;background:var(--bg-card);box-shadow:var(--shadow-lg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-primary);font-size:20px" aria-label="Take photo">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== HISTORY VIEW ===== -->
+    <div id="history-view" class="page">
+      <div class="header">
+        <div class="header-title">Journeys</div>
+      </div>
+      <div class="history-search">
+        <input type="text" id="history-search-input" placeholder="Search journeys..." autocomplete="off">
+      </div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+
+    <!-- ===== STATS VIEW ===== -->
+    <div id="stats-view" class="page">
+      <div class="header">
+        <div class="header-title">Statistics</div>
+      </div>
+      <div class="stats-content" id="stats-content"></div>
+    </div>
+
+    <!-- ===== SETTINGS VIEW ===== -->
+    <div id="settings-view" class="page">
+      <div class="header">
+        <div class="header-title">Settings</div>
+      </div>
+      <div class="settings-content">
+        <div class="settings-section">
+          <div class="settings-section-title">Units</div>
+          <div class="settings-row">
+            <span class="settings-label">Distance unit</span>
+            <select class="settings-value" id="setting-unit">
+              <option value="km">Kilometers</option>
+              <option value="miles">Miles</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Tracking</div>
+          <div class="settings-row">
+            <span class="settings-label">GPS update interval</span>
+            <select class="settings-value" id="setting-interval">
+              <option value="1000">1 second</option>
+              <option value="2000">2 seconds</option>
+              <option value="5000">5 seconds</option>
+              <option value="10000">10 seconds</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Appearance</div>
+          <div class="settings-row">
+            <span class="settings-label">Dark mode</span>
+            <div class="toggle" id="dark-mode-toggle"></div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">Follow me on map</span>
+            <div class="toggle on" id="follow-toggle"></div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Data</div>
+          <div class="settings-row" style="cursor:pointer" id="export-all-btn">
+            <span class="settings-label">Export all as GPX</span>
+            <span class="settings-value">→</span>
+          </div>
+          <div class="settings-row" style="cursor:pointer" id="import-gpx-btn">
+            <span class="settings-label">Import GPX file</span>
+            <span class="settings-value">→</span>
+          </div>
+          <div class="settings-row" style="cursor:pointer" id="clear-all-btn">
+            <span class="settings-label" style="color:var(--danger)">Clear all data</span>
+            <span class="settings-value" style="color:var(--danger)">→</span>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">About</div>
+          <div class="settings-row">
+            <span class="settings-label">Version</span>
+            <span class="settings-value">1.0.0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB BAR ===== -->
+    <nav class="tab-bar">
+      <button class="tab-item active" data-tab="map">
+        <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+        <span>Map</span>
+      </button>
+      <button class="tab-item" data-tab="history">
+        <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+        <span>History</span>
+      </button>
+      <button class="tab-item" data-tab="stats">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+        <span>Stats</span>
+      </button>
+      <button class="tab-item" data-tab="settings">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 15.6 12 3.611 3.611 0 0 1 12 15.6z"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- ===== JOURNEY SUMMARY OVERLAY ===== -->
+    <div class="overlay" id="summary-overlay">
+      <div class="overlay-sheet">
+        <div class="sheet-handle"></div>
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:16px">Journey Complete</h2>
+        <div class="stat-row" id="summary-stats"></div>
+        <div class="input-group" style="margin-top:16px">
+          <label>Journey name</label>
+          <input type="text" id="summary-name" placeholder="My Journey">
+        </div>
+        <div class="input-group">
+          <label>Notes</label>
+          <textarea id="summary-notes" placeholder="Add notes..." rows="2"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-primary" id="summary-save-btn" style="flex:1">Save Journey</button>
+          <button class="btn btn-ghost" id="summary-discard-btn">Discard</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== DETAIL VIEW ===== -->
+    <div id="detail-view">
+      <div class="header">
+        <div class="header-left">
+          <button class="btn btn-icon" id="detail-back-btn" aria-label="Back">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          </button>
+        </div>
+        <div class="header-title" id="detail-title">Journey</div>
+        <div class="header-right">
+          <button class="btn btn-icon" id="detail-fav-btn" aria-label="Favourite">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </button>
+          <button class="btn btn-icon" id="detail-share-btn" aria-label="Share">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+          </button>
+          <button class="btn btn-icon" id="detail-export-btn" aria-label="Export GPX">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          </button>
+          <button class="btn btn-icon btn-ghost-danger" id="detail-delete-btn" aria-label="Delete">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="detail-map"></div>
+      <div class="detail-content" id="detail-content"></div>
+    </div>
+
+    <!-- ===== HIDDEN INPUT FOR GPX IMPORT ===== -->
+    <input type="file" id="gpx-file-input" accept=".gpx" style="display:none">
+
+    <!-- ===== HIDDEN INPUT FOR PHOTO ===== -->
+    <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none">
+
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="./app.js"></script>
+</body>
+</html>
