@@ -1048,6 +1048,14 @@ async function shareJourney(id) {
   }
 }
 
+function deleteJourney(id) {
+  if (confirm('Delete this journey?')) {
+    store.remove(id);
+    renderHistory(document.getElementById('history-search-input').value.trim());
+    renderStats();
+  }
+}
+
 function exportJourney(id) {
   const j = store.get(id);
   if (!j) return;
