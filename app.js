@@ -28,6 +28,8 @@ const state = {
   timerInterval: null,
   elapsed: 0,
   photoMarkers: [],
+  firstName: localStorage.getItem('jt-firstname') || '',
+  lastName: localStorage.getItem('jt-lastname') || '',
 };
 
 // ─── Settings ──────────────────────────────────────────────────
@@ -47,6 +49,7 @@ function getDefaultSettings() {
     interval: 2000,
     darkMode: true,
     follow: true,
+    sheetsUrl: '',
   };
 }
 
@@ -156,15 +159,22 @@ function haversineDistance(p1, p2) {
   return R * c;
 }
 
+function calculateSpeedBetweenPoints(p1, p2) {
+  const dist = haversineDistance(p1, p2);
+  const time = (p2.time - p1.time) / 1000;
+  if (time <= 0 || dist <= 0) return 0;
+  return dist / time;
+}
+
 function computeStats(points, startTime, endTime) {
   let totalDistance = 0;
   let maxSpeed = 0;
   for (let i = 1; i < points.length; i++) {
     const d = haversineDistance(points[i - 1], points[i]);
     totalDistance += d;
+    const s = calculateSpeedBetweenPoints(points[i - 1], points[i]);
+    if (s > maxSpeed) maxSpeed = s;
   }
-  const speeds = points.map(p => p.speed || 0).filter(s => s > 0);
-  maxSpeed = speeds.length ? Math.max(...speeds) : 0;
   const avgSpeed = points.length > 1 && totalDistance > 0
     ? (totalDistance / 1000) / ((endTime - startTime) / 3600000)
     : 0;
@@ -426,6 +436,35 @@ function addPhotoMarker(photo, map) {
 // ─── Tracker ───────────────────────────────────────────────────
 function startTracking() {
   if (state.isTracking) return;
+  if (!state.firstName || !state.lastName) {
+    showNamePrompt();
+    return;
+  }
+  beginTracking();
+}
+
+function showNamePrompt() {
+  document.getElementById('name-first').value = state.firstName;
+  document.getElementById('name-last').value = state.lastName;
+  document.getElementById('name-overlay').classList.add('open');
+}
+
+function confirmName() {
+  const first = document.getElementById('name-first').value.trim();
+  const last = document.getElementById('name-last').value.trim();
+  if (!first || !last) {
+    alert('Please enter both first and last name.');
+    return;
+  }
+  state.firstName = first;
+  state.lastName = last;
+  localStorage.setItem('jt-firstname', first);
+  localStorage.setItem('jt-lastname', last);
+  document.getElementById('name-overlay').classList.remove('open');
+  beginTracking();
+}
+
+function beginTracking() {
   state.isTracking = true;
   state.points = [];
   state.startTime = Date.now();
@@ -500,8 +539,12 @@ function updateLiveStats() {
     : 0;
   document.getElementById('live-distance').textContent = formatDistance(dist).split(' ')[0];
   document.getElementById('live-time').textContent = formatTime(state.elapsed);
-  const latest = state.points[state.points.length - 1];
-  const speed = latest ? (latest.speed || 0) : 0;
+  let speed = 0;
+  if (state.points.length >= 2) {
+    const p1 = state.points[state.points.length - 2];
+    const p2 = state.points[state.points.length - 1];
+    speed = calculateSpeedBetweenPoints(p1, p2);
+  }
   document.getElementById('live-speed').textContent = formatSpeed(speed).split(' ')[0];
 }
 
@@ -567,6 +610,8 @@ function saveJourney() {
     notes,
     date: Date.now(),
     favourite: false,
+    firstName: state.firstName,
+    lastName: state.lastName,
     points: state.points,
     stats: {
       totalDistance: stats.totalDistance,
@@ -583,14 +628,17 @@ function saveJourney() {
     finishLocation: state.points.length > 1
       ? { lat: state.points[state.points.length - 1].lat, lng: state.points[state.points.length - 1].lng }
       : null,
-    photos: [],
+    photos: state.pendingPhotos || [],
   };
 
   store.insert(journey);
   closeSummary();
   document.getElementById('live-stats').style.display = 'none';
   state.points = [];
+  state.pendingPhotos = [];
   renderHistory();
+  renderStats();
+  updateSummarySheetBtn();
 }
 
 function closeSummary() {
@@ -817,6 +865,14 @@ function setupUI() {
     saveSettings();
   });
 
+  // Sheets URL
+  const sheetsInput = document.getElementById('setting-sheets-url');
+  sheetsInput.value = settings.sheetsUrl;
+  sheetsInput.addEventListener('change', () => {
+    settings.sheetsUrl = sheetsInput.value.trim();
+    saveSettings();
+  });
+
   // Interval
   const intervalSelect = document.getElementById('setting-interval');
   intervalSelect.value = String(settings.interval);
@@ -840,6 +896,18 @@ function setupUI() {
   document.getElementById('locate-btn').addEventListener('click', locateMap);
   document.getElementById('photo-btn').addEventListener('click', capturePhoto);
 
+  // Name prompt
+  document.getElementById('name-confirm-btn').addEventListener('click', confirmName);
+  document.getElementById('name-cancel-btn').addEventListener('click', () => {
+    document.getElementById('name-overlay').classList.remove('open');
+  });
+  document.getElementById('name-first').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('name-last').focus();
+  });
+  document.getElementById('name-last').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmName();
+  });
+
   // Summary
   document.getElementById('summary-save-btn').addEventListener('click', saveJourney);
   document.getElementById('summary-discard-btn').addEventListener('click', () => {
@@ -847,6 +915,7 @@ function setupUI() {
     document.getElementById('live-stats').style.display = 'none';
     state.points = [];
   });
+  document.getElementById('summary-sheet-btn').addEventListener('click', () => exportToSheets(null));
 
   // History search
   const searchInput = document.getElementById('history-search-input');
@@ -897,6 +966,9 @@ function setupUI() {
   });
   document.getElementById('detail-export-btn').addEventListener('click', () => {
     exportJourney(state.detailJourney?.id);
+  });
+  document.getElementById('detail-sheet-btn').addEventListener('click', () => {
+    exportToSheets(state.detailJourney?.id);
   });
   document.getElementById('detail-delete-btn').addEventListener('click', () => {
     const j = state.detailJourney;
@@ -1028,6 +1100,72 @@ function importGPX(e) {
   };
   reader.readAsText(file);
   e.target.value = '';
+}
+
+// ─── Google Sheets Export ──────────────────────────────────────
+function updateSummarySheetBtn() {
+  const btn = document.getElementById('summary-sheet-btn');
+  if (!btn) return;
+  const j = store.getAll()[0];
+  if (!j) { btn.style.display = 'none'; return; }
+  btn.style.display = j.sheetExported ? 'none' : 'inline-flex';
+}
+
+async function exportToSheets(journeyId) {
+  const j = journeyId ? store.get(journeyId) : store.getAll()[0];
+  if (!j) { alert('No journey to export.'); return; }
+  if (!settings.sheetsUrl) {
+    alert('Please set your Google Sheets Web App URL in Settings first.');
+    switchTab('settings');
+    return;
+  }
+  if (j.sheetExported) {
+    alert('Already exported to Google Sheets.');
+    return;
+  }
+
+  const btn = document.getElementById('summary-sheet-btn') || document.getElementById('detail-sheet-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Exporting...'; }
+
+  try {
+    const payload = {
+      firstName: j.firstName || '',
+      lastName: j.lastName || '',
+      date: new Date(j.date).toISOString().split('T')[0],
+      name: j.name,
+      distance: formatDistance(j.stats.totalDistance, 'km'),
+      distanceMeters: j.stats.totalDistance.toFixed(1),
+      duration: formatTime(j.stats.duration),
+      durationSeconds: j.stats.duration.toFixed(0),
+      avgSpeed: formatSpeed(j.stats.avgSpeed, 'km'),
+      maxSpeed: formatSpeed(j.stats.maxSpeed, 'km'),
+      avgSpeedMs: j.stats.avgSpeed.toFixed(2),
+      maxSpeedMs: j.stats.maxSpeed.toFixed(2),
+      points: j.stats.pointCount,
+      startTime: new Date(j.stats.startTime).toISOString(),
+      endTime: new Date(j.stats.endTime).toISOString(),
+      startLat: j.startLocation ? j.startLocation.lat.toFixed(6) : '',
+      startLng: j.startLocation ? j.startLocation.lng.toFixed(6) : '',
+      finishLat: j.finishLocation ? j.finishLocation.lat.toFixed(6) : '',
+      finishLng: j.finishLocation ? j.finishLocation.lng.toFixed(6) : '',
+      notes: j.notes || '',
+    };
+
+    const resp = await fetch(settings.sheetsUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    store.update(j.id, { sheetExported: true });
+    if (btn) { btn.textContent = 'Exported ✅'; btn.style.opacity = '0.5'; }
+    alert('Journey exported to Google Sheets!');
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Export to Sheets'; }
+    alert('Export failed: ' + err.message + '\nMake sure your Google Sheets Web App URL is correct in Settings.');
+  }
+  updateSummarySheetBtn();
 }
 
 // ─── Photo capture ─────────────────────────────────────────────
