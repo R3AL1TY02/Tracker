@@ -1147,12 +1147,17 @@ async function exportToSheets(journeyId) {
     };
 
     const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
-    await fetch(settings.sheetsUrl + '?', {
+    const res = await fetch(settings.sheetsUrl, {
       method: 'POST',
-      mode: 'no-cors',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formBody,
     });
+    const text = await res.text();
+    let result;
+    try { result = JSON.parse(text); } catch (_) { result = { success: false, error: 'Bad response from Google (check your URL)' }; }
+    if (!result.success) {
+      throw new Error(result.error || 'Unknown error from Google Sheets');
+    }
 
     store.update(j.id, { sheetExported: true });
     if (btn) { btn.textContent = 'Exported ✅'; btn.style.opacity = '0.5'; }
