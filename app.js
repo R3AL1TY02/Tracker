@@ -499,6 +499,11 @@ function onPosition(pos) {
       { lat: pos.coords.latitude, lng: pos.coords.longitude }
     );
     if (dist < 2) return;
+    if (pos.coords.speed !== null && pos.coords.speed < 0.5 && dist < 10) {
+      state.currentPosition = pos;
+      updateUserMarker([pos.coords.latitude, pos.coords.longitude], pos.coords.heading);
+      return;
+    }
   }
 
   const point = {
