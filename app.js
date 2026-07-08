@@ -492,6 +492,15 @@ function beginTracking() {
 function onPosition(pos) {
   if (pos.coords.accuracy > 100 && state.points.length > 0) return;
 
+  if (state.points.length > 0) {
+    const last = state.points[state.points.length - 1];
+    const dist = haversineDistance(
+      { lat: last.lat, lng: last.lng },
+      { lat: pos.coords.latitude, lng: pos.coords.longitude }
+    );
+    if (dist < 5) return;
+  }
+
   const point = {
     lat: pos.coords.latitude,
     lng: pos.coords.longitude,
