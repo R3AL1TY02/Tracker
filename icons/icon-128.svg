@@ -1,11 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <rect width="128" height="128" rx="24" fill="#0a0a0f"/>
-  <circle cx="64" cy="64" r="48" fill="none" stroke="#007aff" stroke-width="5"/>
-  <circle cx="64" cy="64" r="10" fill="#007aff"/>
-  <path d="M64 16 L72 54 L64 58 L56 54 Z" fill="#34c759" opacity="0.8"/>
-  <path d="M64 112 L72 74 L64 70 L56 74 Z" fill="#ff3b30" opacity="0.8"/>
-  <circle cx="24" cy="36" r="5" fill="#ff9f0a" opacity="0.6"/>
-  <circle cx="104" cy="90" r="5" fill="#5ac8fa" opacity="0.6"/>
-  <circle cx="28" cy="90" r="4" fill="#ff9f0a" opacity="0.4"/>
-  <circle cx="98" cy="34" r="4" fill="#5ac8fa" opacity="0.4"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a84ff"/>
+      <stop offset="100%" stop-color="#5ac8fa"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="24" fill="url(#bg)"/>
+  <text x="64" y="86" font-family="-apple-system,Helvetica Neue,Helvetica,Arial,sans-serif" font-size="80" font-weight="700" fill="white" text-anchor="middle">J</text>
 </svg>
