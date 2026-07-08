@@ -28,6 +28,7 @@ const state = {
   timerInterval: null,
   elapsed: 0,
   photoMarkers: [],
+  pendingPhotos: [],
   firstName: localStorage.getItem('jt-firstname') || '',
   lastName: localStorage.getItem('jt-lastname') || '',
 };
@@ -595,6 +596,8 @@ function showSummary() {
 
   document.getElementById('summary-name').value = `Journey ${formatDate(stats.startTime)}`;
   document.getElementById('summary-notes').value = '';
+  document.getElementById('summary-sheet-btn').textContent = 'Save & Export to Sheets';
+  document.getElementById('summary-sheet-btn').style.display = 'inline-flex';
   document.getElementById('summary-overlay').classList.add('open');
 }
 
@@ -639,6 +642,7 @@ function saveJourney() {
   renderHistory();
   renderStats();
   updateSummarySheetBtn();
+  return journey;
 }
 
 function closeSummary() {
@@ -915,7 +919,17 @@ function setupUI() {
     document.getElementById('live-stats').style.display = 'none';
     state.points = [];
   });
-  document.getElementById('summary-sheet-btn').addEventListener('click', () => exportToSheets(null));
+  document.getElementById('summary-sheet-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('summary-sheet-btn');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    const journey = saveJourney();
+    if (journey) {
+      await exportToSheets(journey.id);
+    }
+    btn.disabled = false;
+    btn.textContent = 'Save & Export to Sheets';
+  });
 
   // History search
   const searchInput = document.getElementById('history-search-input');
@@ -1151,9 +1165,8 @@ async function exportToSheets(journeyId) {
       notes: j.notes || '',
     };
 
-    const resp = await fetch(settings.sheetsUrl, {
+    await fetch(settings.sheetsUrl, {
       method: 'POST',
-      mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
@@ -1188,7 +1201,7 @@ function onPhotoCaptured(e) {
     };
     const marker = addPhotoMarker(photo);
     if (marker) state.photoMarkers.push(marker);
-    state.pendingPhoto = photo;
+    state.pendingPhotos.push(photo);
   };
   reader.readAsDataURL(file);
   e.target.value = '';
