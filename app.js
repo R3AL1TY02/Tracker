@@ -138,16 +138,6 @@ function formatDistance(meters, unit) {
   return `${km.toFixed(2)} km`;
 }
 
-function formatSpeed(mps, unit) {
-  const u = unit || settings.unit;
-  if (u === 'miles') {
-    const mph = mps * 2.23694;
-    return `${mph.toFixed(1)} mph`;
-  }
-  const kmh = mps * 3.6;
-  return `${kmh.toFixed(1)} km/h`;
-}
-
 function haversineDistance(p1, p2) {
   const R = 6371000;
   const dLat = (p2.lat - p1.lat) * Math.PI / 180;
@@ -542,16 +532,6 @@ function updateLiveStats() {
     : 0;
   document.getElementById('live-distance').textContent = formatDistance(dist).split(' ')[0];
   document.getElementById('live-time').textContent = formatTime(state.elapsed);
-  let speed = 0;
-  if (state.points.length >= 2) {
-    const p1 = state.points[state.points.length - 2];
-    const p2 = state.points[state.points.length - 1];
-    speed = calculateSpeedBetweenPoints(p1, p2);
-    if (speed > 50) speed = 0;
-  }
-  document.getElementById('live-speed').textContent = formatSpeed(speed).split(' ')[0];
-  const unitLabel = document.getElementById('live-speed-unit');
-  if (unitLabel) unitLabel.textContent = settings.unit === 'miles' ? 'mph' : 'km/h';
 }
 
 function stopTracking() {
@@ -593,8 +573,6 @@ function showSummary() {
   statRow.innerHTML = `
     <div class="stat-item"><div class="stat-value">${formatDistance(stats.totalDistance)}</div><div class="stat-label">Distance</div></div>
     <div class="stat-item"><div class="stat-value">${formatTime(stats.duration)}</div><div class="stat-label">Duration</div></div>
-    <div class="stat-item"><div class="stat-value">${formatSpeed(stats.avgSpeed)}</div><div class="stat-label">Avg Speed</div></div>
-    <div class="stat-item"><div class="stat-value">${formatSpeed(stats.maxSpeed)}</div><div class="stat-label">Max Speed</div></div>
     <div class="stat-item"><div class="stat-value">${stats.pointCount}</div><div class="stat-label">Points</div></div>
     <div class="stat-item"><div class="stat-value">${formatDate(stats.startTime)}</div><div class="stat-label">Start</div></div>
   `;
@@ -684,7 +662,6 @@ function renderHistory(query) {
         <div class="journey-card-stats">
           <span>${formatDistance(d.totalDistance)}</span>
           <span>${formatTime(d.duration)}</span>
-          <span>${formatSpeed(d.avgSpeed)}</span>
         </div>
         <div class="journey-card-actions">
           <button class="btn btn-ghost share-journey-btn" data-id="${j.id}" style="padding:6px 12px;font-size:12px">Share</button>
@@ -702,7 +679,6 @@ function renderStats() {
   const totalDistance = journeys.reduce((s, j) => s + (j.stats.totalDistance || 0), 0);
   const totalTime = journeys.reduce((s, j) => s + (j.stats.duration || 0), 0);
   const longest = journeys.reduce((best, j) => (j.stats.totalDistance || 0) > (best?.stats?.totalDistance || 0) ? j : best, null);
-  const fastest = journeys.reduce((best, j) => (j.stats.maxSpeed || 0) > (best?.stats?.maxSpeed || 0) ? j : best, null);
 
   el.innerHTML = `
     <div class="stats-hero">
@@ -721,7 +697,6 @@ function renderStats() {
       <div class="card-title">Records</div>
       <div class="stat-row">
         <div class="stat-item"><div class="stat-value">${longest ? formatDistance(longest.stats.totalDistance) : '0'}</div><div class="stat-label">Longest</div></div>
-        <div class="stat-item"><div class="stat-value">${fastest ? formatSpeed(fastest.stats.maxSpeed) : '0'}</div><div class="stat-label">Fastest</div></div>
         <div class="stat-item"><div class="stat-value">${longest ? formatTime(longest.stats.duration) : '0'}</div><div class="stat-label">Longest Time</div></div>
       </div>
     </div>
@@ -787,8 +762,6 @@ function openDetail(journeyId) {
       <div class="stat-row">
         <div class="stat-item"><div class="stat-value">${formatDistance(d.totalDistance)}</div><div class="stat-label">Distance</div></div>
         <div class="stat-item"><div class="stat-value">${formatTime(d.duration)}</div><div class="stat-label">Duration</div></div>
-        <div class="stat-item"><div class="stat-value">${formatSpeed(d.avgSpeed)}</div><div class="stat-label">Avg Speed</div></div>
-        <div class="stat-item"><div class="stat-value">${formatSpeed(d.maxSpeed)}</div><div class="stat-label">Max Speed</div></div>
         <div class="stat-item"><div class="stat-value">${d.pointCount}</div><div class="stat-label">Points</div></div>
       </div>
     </div>
@@ -1040,7 +1013,6 @@ async function shareJourney(id) {
   const d = j.stats;
   const text = `📍 ${j.name}\n` +
     `📏 ${formatDistance(d.totalDistance)} in ${formatTime(d.duration)}\n` +
-    `⚡ Avg: ${formatSpeed(d.avgSpeed)} | Max: ${formatSpeed(d.maxSpeed)}\n` +
     `📍 ${formatDate(d.startTime)}`;
 
   if (navigator.share) {
@@ -1164,10 +1136,6 @@ async function exportToSheets(journeyId) {
       distanceMeters: j.stats.totalDistance.toFixed(1),
       duration: formatTime(j.stats.duration),
       durationSeconds: j.stats.duration.toFixed(0),
-      avgSpeed: formatSpeed(j.stats.avgSpeed, 'km'),
-      maxSpeed: formatSpeed(j.stats.maxSpeed, 'km'),
-      avgSpeedMs: j.stats.avgSpeed.toFixed(2),
-      maxSpeedMs: j.stats.maxSpeed.toFixed(2),
       points: j.stats.pointCount,
       startTime: new Date(j.stats.startTime).toISOString(),
       endTime: new Date(j.stats.endTime).toISOString(),
@@ -1179,17 +1147,12 @@ async function exportToSheets(journeyId) {
     };
 
     const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
-    const res = await fetch(settings.sheetsUrl, {
+    await fetch(settings.sheetsUrl + '?', {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formBody,
     });
-    const text = await res.text();
-    let result;
-    try { result = JSON.parse(text); } catch (_) { result = { success: false, error: 'Invalid response — check your Web App URL in Settings' }; }
-    if (!result.success) {
-      throw new Error(result.error || 'Unknown error from Google Sheets');
-    }
 
     store.update(j.id, { sheetExported: true });
     if (btn) { btn.textContent = 'Exported ✅'; btn.style.opacity = '0.5'; }
