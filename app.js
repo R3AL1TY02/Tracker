@@ -1142,16 +1142,7 @@ async function exportToSheets(journeyId) {
       date: new Date(j.date).toISOString().split('T')[0],
       name: j.name,
       distance: formatDistance(j.stats.totalDistance, 'km'),
-      distanceMeters: j.stats.totalDistance.toFixed(1),
       duration: formatTime(j.stats.duration),
-      durationSeconds: j.stats.duration.toFixed(0),
-      points: j.stats.pointCount,
-      startTime: new Date(j.stats.startTime).toISOString(),
-      endTime: new Date(j.stats.endTime).toISOString(),
-      startLat: j.startLocation ? j.startLocation.lat.toFixed(6) : '',
-      startLng: j.startLocation ? j.startLocation.lng.toFixed(6) : '',
-      finishLat: j.finishLocation ? j.finishLocation.lat.toFixed(6) : '',
-      finishLng: j.finishLocation ? j.finishLocation.lng.toFixed(6) : '',
       notes: j.notes || '',
     };
 
