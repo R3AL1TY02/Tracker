@@ -498,7 +498,7 @@ function onPosition(pos) {
       { lat: last.lat, lng: last.lng },
       { lat: pos.coords.latitude, lng: pos.coords.longitude }
     );
-    if (dist < 5) return;
+    if (dist < 2) return;
   }
 
   const point = {
