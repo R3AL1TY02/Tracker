@@ -1173,11 +1173,15 @@ async function exportToSheets(journeyId) {
       notes: j.notes || '',
     };
 
-    await fetch(settings.sheetsUrl, {
+    const res = await fetch(settings.sheetsUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
     });
+    const result = await res.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Unknown error from Google Sheets');
+    }
 
     store.update(j.id, { sheetExported: true });
     if (btn) { btn.textContent = 'Exported ✅'; btn.style.opacity = '0.5'; }
