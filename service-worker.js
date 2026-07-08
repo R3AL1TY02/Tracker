@@ -1,10 +1,15 @@
-const CACHE_NAME = 'journey-tracker-v8';
+const CACHE_NAME = 'journey-tracker-v9';
 const PRECACHE_URLS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './manifest.json',
+  './icons/icon-72.svg',
+  './icons/icon-96.svg',
+  './icons/icon-128.svg',
+  './icons/icon-192.svg',
+  './icons/icon-512.svg',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];
