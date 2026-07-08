@@ -174,7 +174,7 @@ function computeStats(points, startTime, endTime) {
     const d = haversineDistance(points[i - 1], points[i]);
     totalDistance += d;
     const s = calculateSpeedBetweenPoints(points[i - 1], points[i]);
-    if (s > maxSpeed) maxSpeed = s;
+    if (s > maxSpeed && s < 50) maxSpeed = s;
   }
   const avgSpeed = points.length > 1 && totalDistance > 0
     ? (totalDistance / 1000) / ((endTime - startTime) / 3600000)
@@ -500,6 +500,8 @@ function beginTracking() {
 }
 
 function onPosition(pos) {
+  if (pos.coords.accuracy > 100 && state.points.length > 0) return;
+
   const point = {
     lat: pos.coords.latitude,
     lng: pos.coords.longitude,
@@ -545,8 +547,11 @@ function updateLiveStats() {
     const p1 = state.points[state.points.length - 2];
     const p2 = state.points[state.points.length - 1];
     speed = calculateSpeedBetweenPoints(p1, p2);
+    if (speed > 50) speed = 0;
   }
   document.getElementById('live-speed').textContent = formatSpeed(speed).split(' ')[0];
+  const unitLabel = document.getElementById('live-speed-unit');
+  if (unitLabel) unitLabel.textContent = settings.unit === 'miles' ? 'mph' : 'km/h';
 }
 
 function stopTracking() {
@@ -1173,12 +1178,15 @@ async function exportToSheets(journeyId) {
       notes: j.notes || '',
     };
 
+    const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
     const res = await fetch(settings.sheetsUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formBody,
     });
-    const result = await res.json();
+    const text = await res.text();
+    let result;
+    try { result = JSON.parse(text); } catch (_) { result = { success: false, error: 'Invalid response — check your Web App URL in Settings' }; }
     if (!result.success) {
       throw new Error(result.error || 'Unknown error from Google Sheets');
     }
