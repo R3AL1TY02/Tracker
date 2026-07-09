@@ -1257,7 +1257,9 @@ function importGPX(e) {
 function updateSummarySheetBtn() {
   const btn = document.getElementById('summary-sheet-btn');
   if (!btn) return;
-  const j = store.getAll()[0];
+  const journeys = store.getAll();
+  const j = journeys[0];
+  if (!j) { btn.style.display = 'none'; return; }
   btn.style.display = j.sheetExported ? 'none' : 'inline-flex';
 }
 

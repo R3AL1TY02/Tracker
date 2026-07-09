@@ -42,7 +42,7 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  if (url.origin === 'https://unpkg.com' || url.hostname === 'tile.openstreetmap.org') {
+  if (url.origin === 'https://unpkg.com' || url.hostname.endsWith('.tile.openstreetmap.org') || url.hostname === 'tile.openstreetmap.org') {
     event.respondWith(
       caches.match(request).then(cached => {
         return cached || fetch(request).then(response => {
