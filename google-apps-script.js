@@ -58,18 +58,12 @@ function doPost(e) {
     }
 
     var lastRow = sheet.getLastRow();
-    var dataRange = sheet.getRange(1, 1, lastRow, 9);
-    dataRange.setBorder(true, true, true, true, true, true, '#c8d0da', SpreadsheetApp.BorderStyle.SOLID_THIN);
-
-    var existingBandings = sheet.getBandings();
-    for (var b = 0; b < existingBandings.length; b++) {
-      existingBandings[b].remove();
+    for (var r = 2; r <= lastRow; r++) {
+      var row = sheet.getRange(r, 1, 1, 9);
+      row.setBackground(r % 2 === 0 ? '#ffffff' : '#f0f4fa');
+      row.setFontSize(10);
+      row.setBorder(true, true, true, true, true, true, '#c8d0da', SpreadsheetApp.BorderStyle.SOLID_THIN);
     }
-    var banding = dataRange.applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY);
-    banding.setHeaderBackgroundColor('#0a1628');
-    banding.setHeaderFontColor('#ffffff');
-    banding.setFirstRowBackgroundColor('#ffffff');
-    banding.setSecondRowBackgroundColor('#f0f4fa');
 
     sheet.getRange(2, 8, lastRow - 1, 2).setWrap(true);
 

@@ -29,6 +29,8 @@ const state = {
   elapsed: 0,
   photoMarkers: [],
   pendingPhotos: [],
+  activeAbstraction: null,
+  activeMarker: null,
   pendingAbstractions: [],
   abstractionMarkers: [],
   firstName: localStorage.getItem('jt-firstname') || '',
@@ -436,14 +438,26 @@ function addPhotoMarker(photo, map) {
 function addAbstractionMarker(abstraction, m) {
   if (!m) m = state.map;
   if (!m) return null;
+  const isActive = abstraction.endTime === undefined || abstraction.endTime === null;
+  const label = isActive ? '!' : '\u2713';
+  const bg = isActive ? '#af52de' : '#34c759';
   const icon = L.divIcon({
     className: 'abstraction-marker-icon',
-    html: `<div style="width:28px;height:28px;border-radius:50%;background:#af52de;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700;">!</div>`,
+    html: `<div style="width:28px;height:28px;border-radius:50%;background:${bg};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700;">${label}</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
   const marker = L.marker([abstraction.lat, abstraction.lng], { icon }).addTo(m);
-  marker.bindPopup(`<div style="font-size:14px;font-weight:600;max-width:200px">${escapeHtml(abstraction.note)}</div><div style="font-size:12px;color:#8e8e93;margin-top:4px">${new Date(abstraction.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>`);
+  let popup = `<div style="font-size:14px;font-weight:600;max-width:200px">${escapeHtml(abstraction.note)}</div>`;
+  const startStr = new Date(abstraction.startTime || abstraction.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  if (abstraction.endTime) {
+    const endStr = new Date(abstraction.endTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const dur = Math.round((abstraction.endTime - (abstraction.startTime || abstraction.time)) / 60000);
+    popup += `<div style="font-size:12px;color:#8e8e93;margin-top:4px">${startStr} \u2013 ${endStr} (${dur}m)</div>`;
+  } else {
+    popup += `<div style="font-size:12px;color:#8e8e93;margin-top:4px">Started ${startStr} (active)</div>`;
+  }
+  marker.bindPopup(popup);
   return marker;
 }
 
@@ -594,6 +608,17 @@ function stopTracking() {
       <path d="M8 5v14l11-7z"/>
     </svg>
     Start Patrol`;
+
+  if (state.activeAbstraction) {
+    state.activeAbstraction.endTime = Date.now();
+    state.activeAbstraction.startTime = state.activeAbstraction.startTime || state.activeAbstraction.time;
+    state.pendingAbstractions.push(state.activeAbstraction);
+    if (state.activeMarker) { state.map.removeLayer(state.activeMarker); state.activeMarker = null; }
+    var fm = addAbstractionMarker(state.activeAbstraction);
+    if (fm) state.abstractionMarkers.push(fm);
+    state.activeAbstraction = null;
+    updateAbstractionBtn();
+  }
 
   if (state.points.length < 2) {
     document.getElementById('live-stats').style.display = 'none';
@@ -846,14 +871,23 @@ function openDetail(journeyId) {
     <div class="card">
       <div class="card-title">Called Away (${journey.waypoints.length})</div>
       <div class="abstraction-list">
-        ${journey.waypoints.map(w => `
+        ${journey.waypoints.map(w => {
+          const start = new Date(w.startTime || w.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+          let timeStr = start;
+          if (w.endTime) {
+            const end = new Date(w.endTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            const dur = Math.round((w.endTime - (w.startTime || w.time)) / 60000);
+            timeStr = start + ' \u2013 ' + end + ' (' + dur + 'm)';
+          }
+          return `
         <div class="abstraction-item">
           <div class="abstraction-dot"></div>
           <div class="abstraction-body">
             <div class="abstraction-note">${escapeHtml(w.note)}</div>
-            <div class="abstraction-time">${new Date(w.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+            <div class="abstraction-time">${timeStr}</div>
           </div>
-        </div>`).join('')}
+        </div>`;
+        }).join('')}
       </div>
     </div>` : ''}
     ${journey.photos && journey.photos.length ? `
@@ -963,16 +997,29 @@ function setupUI() {
   // Waypoint
   document.getElementById('abstraction-btn').addEventListener('click', () => {
     if (!state.isTracking) return;
+    if (state.activeAbstraction) {
+      addAbstraction();
+      return;
+    }
     document.getElementById('abstraction-note-input').value = '';
+    document.getElementById('abstraction-overlay-title').textContent = 'Called Away';
+    document.getElementById('abstraction-overlay-desc').textContent = 'Mark when you\u2019re abstracted to another scene';
+    document.getElementById('abstraction-save-btn').textContent = 'Mark Abstracted';
     document.getElementById('abstraction-overlay').classList.add('open');
     setTimeout(() => document.getElementById('abstraction-note-input').focus(), 300);
   });
-document.getElementById('abstraction-save-btn').addEventListener('click', addAbstraction);
+  document.getElementById('abstraction-save-btn').addEventListener('click', () => {
+    if (state.activeAbstraction) { addAbstraction(); return; }
+    document.getElementById('abstraction-note-input').value.trim() ? addAbstraction() : null;
+  });
   document.getElementById('abstraction-cancel-btn').addEventListener('click', () => {
     document.getElementById('abstraction-overlay').classList.remove('open');
   });
   document.getElementById('abstraction-note-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') addAbstraction();
+    if (e.key === 'Enter') {
+      if (state.activeAbstraction) { addAbstraction(); return; }
+      if (document.getElementById('abstraction-note-input').value.trim()) addAbstraction();
+    }
   });
 
   // Name prompt
@@ -995,6 +1042,7 @@ document.getElementById('abstraction-save-btn').addEventListener('click', addAbs
     document.getElementById('abstraction-btn').style.display = 'none';
     state.points = [];
     state.pendingAbstractions = [];
+    state.activeAbstraction = null;
   });
   document.getElementById('summary-sheet-btn').addEventListener('click', async () => {
     const btn = document.getElementById('summary-sheet-btn');
@@ -1281,8 +1329,14 @@ async function exportToSheets(journeyId) {
   try {
     const waypointsStr = (j.waypoints && j.waypoints.length)
       ? j.waypoints.map(w => {
-          const t = new Date(w.time).toLocaleString('en-GB');
-          return t + ' - ' + w.note;
+          const start = new Date(w.startTime || w.time).toLocaleString('en-GB');
+          let out = start + ' - ' + w.note;
+          if (w.endTime) {
+            const end = new Date(w.endTime).toLocaleString('en-GB');
+            const dur = Math.round((w.endTime - (w.startTime || w.time)) / 60000);
+            out = start + ' \u2013 ' + end + ' (' + dur + 'm) - ' + w.note;
+          }
+          return out;
         }).join('\n')
       : '';
     const routeImage = captureRouteCanvas(j.points);
@@ -1324,6 +1378,25 @@ async function exportToSheets(journeyId) {
 // ─── Waypoints ────────────────────────────────────────────
 function addAbstraction() {
   if (!state.isTracking) return;
+
+  // Finish active abstraction
+  if (state.activeAbstraction) {
+    state.activeAbstraction.endTime = Date.now();
+    state.activeAbstraction.startTime = state.activeAbstraction.startTime || state.activeAbstraction.time;
+    state.pendingAbstractions.push(state.activeAbstraction);
+    if (state.activeMarker) {
+      state.map.removeLayer(state.activeMarker);
+      state.activeMarker = null;
+    }
+    var finMarker = addAbstractionMarker(state.activeAbstraction);
+    if (finMarker) state.abstractionMarkers.push(finMarker);
+    state.activeAbstraction = null;
+    updateAbstractionBtn();
+    document.getElementById('abstraction-overlay').classList.remove('open');
+    return;
+  }
+
+  // Start new abstraction
   const note = document.getElementById('abstraction-note-input').value.trim();
   if (!note) return;
   const pos = state.currentPosition;
@@ -1332,12 +1405,31 @@ function addAbstraction() {
     lat: pos.coords.latitude,
     lng: pos.coords.longitude,
     time: Date.now(),
+    startTime: Date.now(),
     note,
+    endTime: null,
   };
-  state.pendingAbstractions.push(abstraction);
+  state.activeAbstraction = abstraction;
   const marker = addAbstractionMarker(abstraction);
-  if (marker) state.abstractionMarkers.push(marker);
+  state.activeMarker = marker;
+  updateAbstractionBtn();
   document.getElementById('abstraction-overlay').classList.remove('open');
+}
+
+function updateAbstractionBtn() {
+  const btn = document.getElementById('abstraction-btn');
+  if (!btn) return;
+  if (state.activeAbstraction) {
+    btn.style.color = '#34c759';
+    btn.style.animation = 'pulse 1.5s infinite';
+    btn.setAttribute('aria-label', 'Finish call-out');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+  } else {
+    btn.style.color = '';
+    btn.style.animation = '';
+    btn.setAttribute('aria-label', 'Mark called away');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+  }
 }
 
 // ─── Photo capture ─────────────────────────────────────────────
