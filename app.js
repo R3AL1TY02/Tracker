@@ -1,5 +1,5 @@
 /* ============================================================
-   Journey Tracker - Main Application
+   Duty Log - Main Application
    ============================================================ */
 
 // ─── Configuration ─────────────────────────────────────────────
@@ -200,14 +200,14 @@ function calculateBearing(lat1, lng1, lat2, lng2) {
 function generateGPX(journey) {
   const { points, stats, name, date, notes } = journey;
   let gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="JourneyTracker" xmlns="http://www.topografix.com/GPX/1/1">
+<gpx version="1.1" creator="DutyLog" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
-    <name>${escapeXml(name || 'Journey')}</name>
+    <name>${escapeXml(name || 'Patrol')}</name>
     <time>${new Date(date).toISOString()}</time>
     <desc>${escapeXml(notes || '')}</desc>
   </metadata>
   <trk>
-    <name>${escapeXml(name || 'Journey')}</name>
+    <name>${escapeXml(name || 'Patrol')}</name>
     <trkseg>\n`;
   for (const p of points) {
     gpx += `      <trkpt lat="${p.lat}" lon="${p.lng}">`;
@@ -494,7 +494,7 @@ function beginTracking() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:6px">
       <rect x="6" y="6" width="12" height="12" rx="2"/>
     </svg>
-    Stop Tracking`;
+    End Patrol`;
   document.getElementById('live-stats').style.display = 'flex';
   document.getElementById('abstraction-btn').style.display = 'flex';
 
@@ -592,7 +592,7 @@ function stopTracking() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:6px">
       <path d="M8 5v14l11-7z"/>
     </svg>
-    Start Tracking`;
+    Start Patrol`;
 
   if (state.points.length < 2) {
     document.getElementById('live-stats').style.display = 'none';
@@ -630,7 +630,7 @@ function showSummary() {
 }
 
 function saveJourney() {
-  const name = document.getElementById('summary-name').value.trim() || 'My Journey';
+  const name = document.getElementById('summary-name').value.trim() || 'Patrol-' + new Date().toISOString().split('T')[0];
   const notes = document.getElementById('summary-notes').value.trim();
   const stats = state.pendingStats;
   if (!stats) return;
@@ -690,8 +690,8 @@ function renderHistory(query) {
     list.innerHTML = `
       <div class="empty-state">
         <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
-        <h3>No journeys yet</h3>
-        <p>Start tracking your first journey on the Map tab.</p>
+        <h3>No patrols logged</h3>
+        <p>Begin your first patrol on the Map tab.</p>
       </div>`;
     return;
   }
@@ -714,7 +714,7 @@ function renderHistory(query) {
         ${(j.photos?.length || j.waypoints?.length) ? `
         <div class="journey-card-tags">
           ${j.photos?.length ? `<span class="journey-card-tag photos">${j.photos.length} photo</span>` : ''}
-          ${j.waypoints?.length ? `<span class="journey-card-tag abstractions">${j.waypoints.length} abstraction</span>` : ''}
+          ${j.waypoints?.length ? `<span class="journey-card-tag abstractions">${j.waypoints.length} called away</span>` : ''}
         </div>` : ''}
         <div class="journey-card-actions">
           <button class="btn btn-ghost share-journey-btn" data-id="${j.id}" style="padding:6px 12px;font-size:12px">Share</button>
@@ -743,7 +743,7 @@ function renderStats() {
       <div class="stat-row">
         <div class="stat-item"><div class="stat-value">${journeys.length}</div><div class="stat-label">Journeys</div></div>
         <div class="stat-item"><div class="stat-value">${formatTime(totalTime)}</div><div class="stat-label">Time Travelled</div></div>
-        <div class="stat-item"><div class="stat-value">${journeys.length ? formatDistance(totalDistance / journeys.length) : '0'}</div><div class="stat-label">Avg / Journey</div></div>
+        <div class="stat-item"><div class="stat-value">${journeys.length ? formatDistance(totalDistance / journeys.length) : '0'}</div><div class="stat-label">Avg / Shift</div></div>
       </div>
     </div>
     <div class="card">
@@ -756,7 +756,7 @@ function renderStats() {
     ${journeys.length === 0 ? `
       <div class="empty-state">
         <h3>No data yet</h3>
-        <p>Complete a journey to see statistics.</p>
+        <p>Complete a patrol to see statistics.</p>
       </div>` : ''}
   `;
 }
@@ -843,7 +843,7 @@ function openDetail(journeyId) {
     </div>` : ''}
     ${journey.waypoints && journey.waypoints.length ? `
     <div class="card">
-      <div class="card-title">Abstractions (${journey.waypoints.length})</div>
+      <div class="card-title">Called Away (${journey.waypoints.length})</div>
       <div class="abstraction-list">
         ${journey.waypoints.map(w => `
         <div class="abstraction-item">
@@ -1067,7 +1067,7 @@ function setupUI() {
   });
   document.getElementById('gpx-file-input').addEventListener('change', importGPX);
   document.getElementById('clear-all-btn').addEventListener('click', () => {
-    if (confirm('Delete all journeys? This cannot be undone.')) {
+    if (confirm('Delete all patrols? This cannot be undone.')) {
       store.clear();
       renderHistory();
       renderStats();
@@ -1098,9 +1098,9 @@ async function shareJourney(id) {
   const j = store.get(id);
   if (!j) return;
   const d = j.stats;
-  const text = `📍 ${j.name}\n` +
-    `📏 ${formatDistance(d.totalDistance)} in ${formatTime(d.duration)}\n` +
-    `📍 ${formatDate(d.startTime)}`;
+  const text = `${j.name}\n` +
+    `Distance: ${formatDistance(d.totalDistance)}  Time: ${formatTime(d.duration)}\n` +
+    `${formatDate(d.startTime)}`;
 
   if (navigator.share) {
     try {
@@ -1108,12 +1108,12 @@ async function shareJourney(id) {
     } catch (_) { /* user cancelled */ }
   } else {
     await navigator.clipboard.writeText(text);
-    alert('Journey details copied to clipboard!');
+    alert('Patrol details copied to clipboard!');
   }
 }
 
 function deleteJourney(id) {
-  if (confirm('Delete this journey?')) {
+  if (confirm('Delete this patrol?')) {
     store.remove(id);
     renderHistory(document.getElementById('history-search-input').value.trim());
     renderStats();
@@ -1130,8 +1130,8 @@ function exportJourney(id) {
 
 function exportAllGPX() {
   const journeys = store.getAll();
-  if (!journeys.length) { alert('No journeys to export.'); return; }
-  let combined = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="JourneyTracker" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+  if (!journeys.length) { alert('No patrols to export.'); return; }
+  let combined = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="DutyLog" xmlns="http://www.topografix.com/GPX/1/1">\n`;
   for (const j of journeys) {
     combined += `  <trk>\n    <name>${escapeXml(j.name)}</name>\n    <trkseg>\n`;
     for (const p of j.points) {
@@ -1199,7 +1199,7 @@ function updateSummarySheetBtn() {
 
 async function exportToSheets(journeyId) {
   const j = journeyId ? store.get(journeyId) : store.getAll()[0];
-  if (!j) { alert('No journey to export.'); return; }
+  if (!j) { alert('No patrol to export.'); return; }
   if (!settings.sheetsUrl) {
     alert('Please set your Google Sheets Web App URL in Settings first.');
     switchTab('settings');
@@ -1239,7 +1239,7 @@ async function exportToSheets(journeyId) {
 
     store.update(j.id, { sheetExported: true });
     if (btn) { btn.textContent = 'Exported ✅'; btn.style.opacity = '0.5'; }
-    alert('Journey exported to Google Sheets!');
+    alert('Patrol exported to Google Sheets!');
   } catch (err) {
     if (btn) { btn.disabled = false; btn.textContent = 'Export to Sheets'; }
     alert('Export failed: ' + err.message + '\nMake sure your Google Sheets Web App URL is correct in Settings.');
@@ -1268,7 +1268,7 @@ function addAbstraction() {
 
 // ─── Photo capture ─────────────────────────────────────────────
 function capturePhoto() {
-  if (!state.isTracking) { alert('Start tracking first to add photos.'); return; }
+  if (!state.isTracking) { alert('Start a patrol first to add photos.'); return; }
   document.getElementById('photo-input').click();
 }
 

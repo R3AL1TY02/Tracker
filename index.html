@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Journeys">
-  <meta name="application-name" content="Journey Tracker">
-  <meta name="theme-color" content="#0a0a0f">
-  <meta name="description" content="Track and record your journeys with GPS">
+  <meta name="apple-mobile-web-app-title" content="Duty Log">
+  <meta name="application-name" content="Duty Log">
+  <meta name="theme-color" content="#0a1628">
+  <meta name="description" content="Record patrol routes, mark call-outs, and log duty shifts with GPS">
 
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/svg+xml" href="./icons/icon-192.svg">
@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://tile.openstreetmap.org">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 
-  <title>Journey Tracker</title>
+  <title>Duty Log</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -47,10 +47,10 @@
         </div>
         <button class="tracking-btn start" id="track-btn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:6px"><path d="M8 5v14l11-7z"/></svg>
-          Start Tracking
+          Start Patrol
         </button>
         <div class="map-action-row">
-          <button class="btn btn-icon" id="abstraction-btn" style="display:none;width:44px;height:44px;border-radius:50%;background:var(--bg-card);box-shadow:var(--shadow-lg);border:none;cursor:pointer;align-items:center;justify-content:center;color:var(--accent);font-size:20px" aria-label="Add abstraction">
+          <button class="btn btn-icon" id="abstraction-btn" style="display:none;width:44px;height:44px;border-radius:50%;background:var(--bg-card);box-shadow:var(--shadow-lg);border:none;cursor:pointer;align-items:center;justify-content:center;color:var(--accent);font-size:20px" aria-label="Mark called away">
             <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
           </button>
           <button class="btn btn-icon" id="photo-btn" style="width:44px;height:44px;border-radius:50%;background:var(--bg-card);box-shadow:var(--shadow-lg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-primary);font-size:20px" aria-label="Take photo">
@@ -63,10 +63,10 @@
     <!-- ===== HISTORY VIEW ===== -->
     <div id="history-view" class="page">
       <div class="header">
-        <div class="header-title">Journeys</div>
+        <div class="header-title">Patrols</div>
       </div>
       <div class="history-search">
-        <input type="text" id="history-search-input" placeholder="Search journeys..." autocomplete="off">
+        <input type="text" id="history-search-input" placeholder="Search patrols..." autocomplete="off">
       </div>
       <div class="history-list" id="history-list"></div>
     </div>
@@ -175,7 +175,7 @@
       <div class="overlay-sheet">
         <div class="sheet-handle"></div>
         <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">Your Name</h2>
-        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Enter your name before tracking</p>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Enter your name before starting a patrol</p>
         <div class="input-group">
           <label>First name</label>
           <input type="text" id="name-first" placeholder="John" autocomplete="given-name">
@@ -185,7 +185,7 @@
           <input type="text" id="name-last" placeholder="Doe" autocomplete="family-name">
         </div>
         <div style="display:flex;gap:10px;margin-top:8px">
-          <button class="btn btn-primary" id="name-confirm-btn" style="flex:1">Start Tracking</button>
+          <button class="btn btn-primary" id="name-confirm-btn" style="flex:1">Start Patrol</button>
           <button class="btn btn-ghost" id="name-cancel-btn">Cancel</button>
         </div>
       </div>
@@ -195,14 +195,14 @@
     <div class="overlay" id="abstraction-overlay">
       <div class="overlay-sheet">
         <div class="sheet-handle"></div>
-        <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">Add Abstraction</h2>
-        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Note what distracted you or where you deviated</p>
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">Called Away</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Mark when you're abstracted to another scene</p>
         <div class="input-group">
-          <label>Note</label>
-          <input type="text" id="abstraction-note-input" placeholder="e.g. Got distracted by the shop on High Street..." autocomplete="off">
+          <label>Incident / Location</label>
+          <input type="text" id="abstraction-note-input" placeholder="e.g. Domestic dispute on Oak Street, traffic collision on M1..." autocomplete="off">
         </div>
         <div style="display:flex;gap:10px;margin-top:8px">
-          <button class="btn btn-primary" id="abstraction-save-btn" style="flex:1">Add Abstraction</button>
+          <button class="btn btn-primary" id="abstraction-save-btn" style="flex:1">Mark Abstracted</button>
           <button class="btn btn-ghost" id="abstraction-cancel-btn">Cancel</button>
         </div>
       </div>
@@ -212,18 +212,18 @@
     <div class="overlay" id="summary-overlay">
       <div class="overlay-sheet">
         <div class="sheet-handle"></div>
-        <h2 style="font-size:22px;font-weight:700;margin-bottom:16px">Journey Complete</h2>
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:16px">Patrol Complete</h2>
         <div class="stat-row" id="summary-stats"></div>
         <div class="input-group" style="margin-top:16px">
-          <label>Journey name</label>
-          <input type="text" id="summary-name" placeholder="My Journey">
+          <label>Patrol ref.</label>
+          <input type="text" id="summary-name" placeholder="D-2026-07-09">
         </div>
         <div class="input-group">
           <label>Notes</label>
-          <textarea id="summary-notes" placeholder="Add notes..." rows="2"></textarea>
+          <textarea id="summary-notes" placeholder="Observations, incidents, handover notes..." rows="2"></textarea>
         </div>
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-          <button class="btn btn-primary" id="summary-save-btn" style="flex:1">Save Journey</button>
+          <button class="btn btn-primary" id="summary-save-btn" style="flex:1">Save Patrol</button>
           <button class="btn btn-success" id="summary-sheet-btn" style="display:none">Export to Sheets</button>
           <button class="btn btn-ghost" id="summary-discard-btn">Discard</button>
         </div>
@@ -238,7 +238,7 @@
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
           </button>
         </div>
-        <div class="header-title" id="detail-title">Journey</div>
+        <div class="header-title" id="detail-title">Patrol</div>
         <div class="header-right">
           <button class="btn btn-icon" id="detail-fav-btn" aria-label="Favourite">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
