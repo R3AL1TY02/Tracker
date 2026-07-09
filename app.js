@@ -511,7 +511,8 @@ function beginTracking() {
     </svg>
     End Patrol`;
   document.getElementById('live-stats').style.display = 'flex';
-  document.getElementById('abstraction-btn').style.display = 'flex';
+  document.getElementById('start-abstraction-btn').style.display = 'flex';
+  if (state.activeAbstraction) { updateAbstractionBtn(); }
 
   const interval = settings.interval || CONFIG.defaultInterval;
   state.watchId = navigator.geolocation.watchPosition(
@@ -622,7 +623,8 @@ function stopTracking() {
 
   if (state.points.length < 2) {
     document.getElementById('live-stats').style.display = 'none';
-    document.getElementById('abstraction-btn').style.display = 'none';
+    document.getElementById('start-abstraction-btn').style.display = 'none';
+    document.getElementById('end-abstraction-btn').style.display = 'none';
     state.abstractionMarkers.forEach(m => state.map.removeLayer(m));
     state.abstractionMarkers = [];
     state.pendingAbstractions = [];
@@ -652,6 +654,8 @@ function showSummary() {
   document.getElementById('summary-notes').value = '';
   document.getElementById('summary-sheet-btn').textContent = 'Save & Export to Sheets';
   document.getElementById('summary-sheet-btn').style.display = 'inline-flex';
+  document.getElementById('start-abstraction-btn').style.display = 'none';
+  document.getElementById('end-abstraction-btn').style.display = 'none';
   document.getElementById('summary-overlay').classList.add('open');
 }
 
@@ -692,7 +696,8 @@ function saveJourney() {
   store.insert(journey);
   closeSummary();
   document.getElementById('live-stats').style.display = 'none';
-  document.getElementById('abstraction-btn').style.display = 'none';
+  document.getElementById('start-abstraction-btn').style.display = 'none';
+  document.getElementById('end-abstraction-btn').style.display = 'none';
   state.points = [];
   state.pendingPhotos = [];
   state.pendingAbstractions = [];
@@ -994,13 +999,9 @@ function setupUI() {
   document.getElementById('locate-btn').addEventListener('click', locateMap);
   document.getElementById('photo-btn').addEventListener('click', capturePhoto);
 
-  // Waypoint
-  document.getElementById('abstraction-btn').addEventListener('click', () => {
-    if (!state.isTracking) return;
-    if (state.activeAbstraction) {
-      addAbstraction();
-      return;
-    }
+  // Abstraction
+  document.getElementById('start-abstraction-btn').addEventListener('click', () => {
+    if (!state.isTracking || state.activeAbstraction) return;
     document.getElementById('abstraction-note-input').value = '';
     document.getElementById('abstraction-overlay-title').textContent = 'Called Away';
     document.getElementById('abstraction-overlay-desc').textContent = 'Mark when you\u2019re abstracted to another scene';
@@ -1008,17 +1009,19 @@ function setupUI() {
     document.getElementById('abstraction-overlay').classList.add('open');
     setTimeout(() => document.getElementById('abstraction-note-input').focus(), 300);
   });
+  document.getElementById('end-abstraction-btn').addEventListener('click', () => {
+    if (!state.isTracking || !state.activeAbstraction) return;
+    addAbstraction();
+  });
   document.getElementById('abstraction-save-btn').addEventListener('click', () => {
-    if (state.activeAbstraction) { addAbstraction(); return; }
-    document.getElementById('abstraction-note-input').value.trim() ? addAbstraction() : null;
+    if (document.getElementById('abstraction-note-input').value.trim()) addAbstraction();
   });
   document.getElementById('abstraction-cancel-btn').addEventListener('click', () => {
     document.getElementById('abstraction-overlay').classList.remove('open');
   });
   document.getElementById('abstraction-note-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      if (state.activeAbstraction) { addAbstraction(); return; }
-      if (document.getElementById('abstraction-note-input').value.trim()) addAbstraction();
+    if (e.key === 'Enter' && document.getElementById('abstraction-note-input').value.trim()) {
+      addAbstraction();
     }
   });
 
@@ -1039,7 +1042,8 @@ function setupUI() {
   document.getElementById('summary-discard-btn').addEventListener('click', () => {
     closeSummary();
     document.getElementById('live-stats').style.display = 'none';
-    document.getElementById('abstraction-btn').style.display = 'none';
+    document.getElementById('start-abstraction-btn').style.display = 'none';
+    document.getElementById('end-abstraction-btn').style.display = 'none';
     state.points = [];
     state.pendingAbstractions = [];
     state.activeAbstraction = null;
@@ -1417,18 +1421,17 @@ function addAbstraction() {
 }
 
 function updateAbstractionBtn() {
-  const btn = document.getElementById('abstraction-btn');
-  if (!btn) return;
+  const startBtn = document.getElementById('start-abstraction-btn');
+  const endBtn = document.getElementById('end-abstraction-btn');
+  if (!startBtn || !endBtn) return;
   if (state.activeAbstraction) {
-    btn.style.color = '#34c759';
-    btn.style.animation = 'pulse 1.5s infinite';
-    btn.setAttribute('aria-label', 'Finish call-out');
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+    startBtn.style.display = 'none';
+    endBtn.style.display = 'flex';
+    endBtn.classList.add('finish');
   } else {
-    btn.style.color = '';
-    btn.style.animation = '';
-    btn.setAttribute('aria-label', 'Mark called away');
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+    startBtn.style.display = 'flex';
+    endBtn.style.display = 'none';
+    endBtn.classList.remove('finish');
   }
 }
 
