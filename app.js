@@ -29,8 +29,8 @@ const state = {
   elapsed: 0,
   photoMarkers: [],
   pendingPhotos: [],
-  pendingWaypoints: [],
-  waypointMarkers: [],
+  pendingAbstractions: [],
+  abstractionMarkers: [],
   firstName: localStorage.getItem('jt-firstname') || '',
   lastName: localStorage.getItem('jt-lastname') || '',
 };
@@ -432,17 +432,17 @@ function addPhotoMarker(photo, map) {
   return marker;
 }
 
-function addWaypointMarker(waypoint, m) {
+function addAbstractionMarker(abstraction, m) {
   if (!m) m = state.map;
   if (!m) return null;
   const icon = L.divIcon({
-    className: 'waypoint-marker-icon',
+    className: 'abstraction-marker-icon',
     html: `<div style="width:28px;height:28px;border-radius:50%;background:#af52de;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700;">!</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
-  const marker = L.marker([waypoint.lat, waypoint.lng], { icon }).addTo(m);
-  marker.bindPopup(`<div style="font-size:14px;font-weight:600;max-width:200px">${escapeHtml(waypoint.note)}</div><div style="font-size:12px;color:#8e8e93;margin-top:4px">${new Date(waypoint.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>`);
+  const marker = L.marker([abstraction.lat, abstraction.lng], { icon }).addTo(m);
+  marker.bindPopup(`<div style="font-size:14px;font-weight:600;max-width:200px">${escapeHtml(abstraction.note)}</div><div style="font-size:12px;color:#8e8e93;margin-top:4px">${new Date(abstraction.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>`);
   return marker;
 }
 
@@ -484,9 +484,9 @@ function beginTracking() {
   state.elapsed = 0;
   state.photoMarkers.forEach(m => state.map.removeLayer(m));
   state.photoMarkers = [];
-  state.waypointMarkers.forEach(m => state.map.removeLayer(m));
-  state.waypointMarkers = [];
-  state.pendingWaypoints = [];
+  state.abstractionMarkers.forEach(m => state.map.removeLayer(m));
+  state.abstractionMarkers = [];
+  state.pendingAbstractions = [];
   clearRoute();
 
   document.getElementById('track-btn').className = 'tracking-btn stop';
@@ -496,7 +496,7 @@ function beginTracking() {
     </svg>
     Stop Tracking`;
   document.getElementById('live-stats').style.display = 'flex';
-  document.getElementById('waypoint-btn').style.display = 'flex';
+  document.getElementById('abstraction-btn').style.display = 'flex';
 
   const interval = settings.interval || CONFIG.defaultInterval;
   state.watchId = navigator.geolocation.watchPosition(
@@ -525,7 +525,8 @@ function onPosition(pos) {
       { lat: pos.coords.latitude, lng: pos.coords.longitude }
     );
     if (dist < 2) return;
-    if (pos.coords.speed !== null && pos.coords.speed < 0.5 && dist < 10) {
+    const speed = pos.coords.speed;
+    if (dist < 10 && (speed === null || speed < 0.5)) {
       state.currentPosition = pos;
       updateUserMarker([pos.coords.latitude, pos.coords.longitude], pos.coords.heading);
       return;
@@ -595,10 +596,10 @@ function stopTracking() {
 
   if (state.points.length < 2) {
     document.getElementById('live-stats').style.display = 'none';
-    document.getElementById('waypoint-btn').style.display = 'none';
-    state.waypointMarkers.forEach(m => state.map.removeLayer(m));
-    state.waypointMarkers = [];
-    state.pendingWaypoints = [];
+    document.getElementById('abstraction-btn').style.display = 'none';
+    state.abstractionMarkers.forEach(m => state.map.removeLayer(m));
+    state.abstractionMarkers = [];
+    state.pendingAbstractions = [];
     return;
   }
 
@@ -659,16 +660,16 @@ function saveJourney() {
       ? { lat: state.points[state.points.length - 1].lat, lng: state.points[state.points.length - 1].lng }
       : null,
     photos: state.pendingPhotos || [],
-    waypoints: state.pendingWaypoints || [],
+    waypoints: state.pendingAbstractions || [],
   };
 
   store.insert(journey);
   closeSummary();
   document.getElementById('live-stats').style.display = 'none';
-  document.getElementById('waypoint-btn').style.display = 'none';
+  document.getElementById('abstraction-btn').style.display = 'none';
   state.points = [];
   state.pendingPhotos = [];
-  state.pendingWaypoints = [];
+  state.pendingAbstractions = [];
   renderHistory();
   renderStats();
   updateSummarySheetBtn();
@@ -713,7 +714,7 @@ function renderHistory(query) {
         ${(j.photos?.length || j.waypoints?.length) ? `
         <div class="journey-card-tags">
           ${j.photos?.length ? `<span class="journey-card-tag photos">${j.photos.length} photo</span>` : ''}
-          ${j.waypoints?.length ? `<span class="journey-card-tag waypoints">${j.waypoints.length} waypoint</span>` : ''}
+          ${j.waypoints?.length ? `<span class="journey-card-tag abstractions">${j.waypoints.length} abstraction</span>` : ''}
         </div>` : ''}
         <div class="journey-card-actions">
           <button class="btn btn-ghost share-journey-btn" data-id="${j.id}" style="padding:6px 12px;font-size:12px">Share</button>
@@ -799,7 +800,7 @@ function openDetail(journeyId) {
       L.marker(journey.points[0], { icon: startIcon }).addTo(map);
       L.marker(journey.points[journey.points.length - 1], { icon: endIcon }).addTo(map);
       if (journey.waypoints && journey.waypoints.length) {
-        journey.waypoints.forEach(w => addWaypointMarker(w, map));
+        journey.waypoints.forEach(w => addAbstractionMarker(w, map));
       }
       const bounds = L.latLngBounds(latlngs);
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
@@ -842,14 +843,14 @@ function openDetail(journeyId) {
     </div>` : ''}
     ${journey.waypoints && journey.waypoints.length ? `
     <div class="card">
-      <div class="card-title">Waypoints (${journey.waypoints.length})</div>
-      <div class="waypoint-list">
+      <div class="card-title">Abstractions (${journey.waypoints.length})</div>
+      <div class="abstraction-list">
         ${journey.waypoints.map(w => `
-        <div class="waypoint-item">
-          <div class="waypoint-dot"></div>
-          <div class="waypoint-body">
-            <div class="waypoint-note">${escapeHtml(w.note)}</div>
-            <div class="waypoint-time">${new Date(w.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+        <div class="abstraction-item">
+          <div class="abstraction-dot"></div>
+          <div class="abstraction-body">
+            <div class="abstraction-note">${escapeHtml(w.note)}</div>
+            <div class="abstraction-time">${new Date(w.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
           </div>
         </div>`).join('')}
       </div>
@@ -948,17 +949,17 @@ function setupUI() {
   document.getElementById('photo-btn').addEventListener('click', capturePhoto);
 
   // Waypoint
-  document.getElementById('waypoint-btn').addEventListener('click', () => {
+  document.getElementById('abstraction-btn').addEventListener('click', () => {
     if (!state.isTracking) return;
-    document.getElementById('waypoint-note-input').value = '';
-    document.getElementById('waypoint-overlay').classList.add('open');
-    setTimeout(() => document.getElementById('waypoint-note-input').focus(), 300);
+    document.getElementById('abstraction-note-input').value = '';
+    document.getElementById('abstraction-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('abstraction-note-input').focus(), 300);
   });
-  document.getElementById('waypoint-save-btn').addEventListener('click', addWaypoint);
-  document.getElementById('waypoint-cancel-btn').addEventListener('click', () => {
-    document.getElementById('waypoint-overlay').classList.remove('open');
+  document.getElementById('abstraction-save-btn').addEventListener('click', addWaypoint);
+  document.getElementById('abstraction-cancel-btn').addEventListener('click', () => {
+    document.getElementById('abstraction-overlay').classList.remove('open');
   });
-  document.getElementById('waypoint-note-input').addEventListener('keydown', e => {
+  document.getElementById('abstraction-note-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') addWaypoint();
   });
 
@@ -979,9 +980,9 @@ function setupUI() {
   document.getElementById('summary-discard-btn').addEventListener('click', () => {
     closeSummary();
     document.getElementById('live-stats').style.display = 'none';
-    document.getElementById('waypoint-btn').style.display = 'none';
+    document.getElementById('abstraction-btn').style.display = 'none';
     state.points = [];
-    state.pendingWaypoints = [];
+    state.pendingAbstractions = [];
   });
   document.getElementById('summary-sheet-btn').addEventListener('click', async () => {
     const btn = document.getElementById('summary-sheet-btn');
@@ -1247,22 +1248,22 @@ async function exportToSheets(journeyId) {
 }
 
 // ─── Waypoints ────────────────────────────────────────────
-function addWaypoint() {
+function addAbstraction() {
   if (!state.isTracking) return;
-  const note = document.getElementById('waypoint-note-input').value.trim();
+  const note = document.getElementById('abstraction-note-input').value.trim();
   if (!note) return;
   const pos = state.currentPosition;
   if (!pos) return;
-  const waypoint = {
+  const abstraction = {
     lat: pos.coords.latitude,
     lng: pos.coords.longitude,
     time: Date.now(),
     note,
   };
-  state.pendingWaypoints.push(waypoint);
-  const marker = addWaypointMarker(waypoint);
-  if (marker) state.waypointMarkers.push(marker);
-  document.getElementById('waypoint-overlay').classList.remove('open');
+  state.pendingAbstractions.push(abstraction);
+  const marker = addAbstractionMarker(abstraction);
+  if (marker) state.abstractionMarkers.push(marker);
+  document.getElementById('abstraction-overlay').classList.remove('open');
 }
 
 // ─── Photo capture ─────────────────────────────────────────────

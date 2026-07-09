@@ -50,7 +50,7 @@
           Start Tracking
         </button>
         <div class="map-action-row">
-          <button class="btn btn-icon" id="waypoint-btn" style="display:none;width:44px;height:44px;border-radius:50%;background:var(--bg-card);box-shadow:var(--shadow-lg);border:none;cursor:pointer;align-items:center;justify-content:center;color:var(--accent);font-size:20px" aria-label="Add waypoint">
+          <button class="btn btn-icon" id="abstraction-btn" style="display:none;width:44px;height:44px;border-radius:50%;background:var(--bg-card);box-shadow:var(--shadow-lg);border:none;cursor:pointer;align-items:center;justify-content:center;color:var(--accent);font-size:20px" aria-label="Add abstraction">
             <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
           </button>
           <button class="btn btn-icon" id="photo-btn" style="width:44px;height:44px;border-radius:50%;background:var(--bg-card);box-shadow:var(--shadow-lg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-primary);font-size:20px" aria-label="Take photo">
@@ -191,19 +191,19 @@
       </div>
     </div>
 
-    <!-- ===== WAYPOINT OVERLAY ===== -->
-    <div class="overlay" id="waypoint-overlay">
+    <!-- ===== ABSTRACTION OVERLAY ===== -->
+    <div class="overlay" id="abstraction-overlay">
       <div class="overlay-sheet">
         <div class="sheet-handle"></div>
-        <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">Add Waypoint</h2>
-        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Note where you're headed or what caught your attention</p>
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">Add Abstraction</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Note what distracted you or where you deviated</p>
         <div class="input-group">
           <label>Note</label>
-          <input type="text" id="waypoint-note-input" placeholder="e.g. Turning onto High Street, stopped for coffee..." autocomplete="off">
+          <input type="text" id="abstraction-note-input" placeholder="e.g. Got distracted by the shop on High Street..." autocomplete="off">
         </div>
         <div style="display:flex;gap:10px;margin-top:8px">
-          <button class="btn btn-primary" id="waypoint-save-btn" style="flex:1">Add Waypoint</button>
-          <button class="btn btn-ghost" id="waypoint-cancel-btn">Cancel</button>
+          <button class="btn btn-primary" id="abstraction-save-btn" style="flex:1">Add Abstraction</button>
+          <button class="btn btn-ghost" id="abstraction-cancel-btn">Cancel</button>
         </div>
       </div>
     </div>
