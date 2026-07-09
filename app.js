@@ -53,6 +53,7 @@ function getDefaultSettings() {
     darkMode: true,
     follow: true,
     sheetsUrl: '',
+    sheetViewUrl: '',
   };
 }
 
@@ -923,6 +924,17 @@ function setupUI() {
   sheetsInput.addEventListener('change', () => {
     settings.sheetsUrl = sheetsInput.value.trim();
     saveSettings();
+  });
+
+  const sheetViewInput = document.getElementById('setting-sheet-view-url');
+  sheetViewInput.value = settings.sheetViewUrl;
+  sheetViewInput.addEventListener('change', () => {
+    settings.sheetViewUrl = sheetViewInput.value.trim();
+    saveSettings();
+  });
+  document.getElementById('view-sheet-btn').addEventListener('click', () => {
+    const url = sheetViewInput.value.trim();
+    if (url) window.open(url, '_blank');
   });
 
   // Interval
