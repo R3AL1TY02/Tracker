@@ -134,6 +134,7 @@ html, body {
   font-weight: 500;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   transition: color var(--transition);
   padding: 0;
   position: relative;
@@ -166,6 +167,7 @@ html, body {
   cursor: pointer;
   transition: all var(--transition);
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   position: relative;
   overflow: hidden;
 }
@@ -236,6 +238,7 @@ html, body {
 #map {
   flex: 1;
   width: 100%;
+  height: 100%;
   min-height: 0;
   z-index: 1;
 }
@@ -349,7 +352,7 @@ html, body {
 .accuracy-dot.medium { background: var(--warning); }
 .accuracy-dot.low { background: var(--danger); }
 
-/* === Journey Summary Overlay === */
+/* === Overlays === */
 .overlay {
   position: fixed;
   inset: 0;
@@ -359,8 +362,6 @@ html, body {
   align-items: flex-end;
   justify-content: center;
   animation: fadeIn 0.2s ease;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
 }
 .overlay.open { display: flex; }
 .overlay-sheet {
@@ -370,6 +371,7 @@ html, body {
   max-width: 500px;
   max-height: 85vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 20px;
   padding-bottom: calc(20px + var(--safe-bottom));
   animation: slideUp 0.3s ease;

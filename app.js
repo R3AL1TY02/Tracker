@@ -200,7 +200,7 @@ function calculateBearing(lat1, lng1, lat2, lng2) {
 function generateGPX(journey) {
   const { points, stats, name, date, notes } = journey;
   let gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="DutyLog" xmlns="http://www.topografix.com/GPX/1/1">
+<gpx version="1.1" creator="MagicApp" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
     <name>${escapeXml(name || 'Patrol')}</name>
     <time>${new Date(date).toISOString()}</time>
@@ -1131,7 +1131,7 @@ function exportJourney(id) {
 function exportAllGPX() {
   const journeys = store.getAll();
   if (!journeys.length) { alert('No patrols to export.'); return; }
-  let combined = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="DutyLog" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+  let combined = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="MagicApp" xmlns="http://www.topografix.com/GPX/1/1">\n`;
   for (const j of journeys) {
     combined += `  <trk>\n    <name>${escapeXml(j.name)}</name>\n    <trkseg>\n`;
     for (const p of j.points) {
