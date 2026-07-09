@@ -1208,6 +1208,60 @@ function updateSummarySheetBtn() {
   btn.style.display = j.sheetExported ? 'none' : 'inline-flex';
 }
 
+function captureRouteCanvas(points) {
+  if (!points || points.length < 2) return '';
+  const W = 480, H = 240;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+  points.forEach(p => {
+    if (p.lat < minLat) minLat = p.lat;
+    if (p.lat > maxLat) maxLat = p.lat;
+    if (p.lng < minLng) minLng = p.lng;
+    if (p.lng > maxLng) maxLng = p.lng;
+  });
+  const pad = Math.max((maxLat - minLat) * 0.1, (maxLng - minLng) * 0.1, 0.002);
+  minLat -= pad; maxLat += pad; minLng -= pad; maxLng += pad;
+  const margin = 25;
+  const xScale = (W - margin * 2) / (maxLng - minLng);
+  const yScale = (H - margin * 2) / (maxLat - minLat);
+  const px = lng => (lng - minLng) * xScale + margin;
+  const py = lat => H - ((lat - minLat) * yScale + margin);
+
+  ctx.fillStyle = '#0a1628';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(77,159,255,0.08)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 10; i++) {
+    ctx.beginPath(); ctx.moveTo((W/10)*i,0); ctx.lineTo((W/10)*i,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,(H/10)*i); ctx.lineTo(W,(H/10)*i); ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#4d9fff';
+  ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  points.forEach((p, i) => { const x = px(p.lng), y = py(p.lat); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+  ctx.stroke();
+
+  const drawMarker = (x, y, label, color) => {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 7px Arial';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, x, y);
+  };
+  drawMarker(px(points[0].lng), py(points[0].lat), 'S', '#34c759');
+  drawMarker(px(points[points.length - 1].lng), py(points[points.length - 1].lat), 'E', '#ff3b30');
+
+  return canvas.toDataURL('image/png');
+}
+
 async function exportToSheets(journeyId) {
   const j = journeyId ? store.get(journeyId) : store.getAll()[0];
   if (!j) { alert('No patrol to export.'); return; }
@@ -1231,6 +1285,7 @@ async function exportToSheets(journeyId) {
           return t + ' - ' + w.note;
         }).join('\n')
       : '';
+    const routeImage = captureRouteCanvas(j.points);
     const payload = {
       firstName: j.firstName || '',
       lastName: j.lastName || '',
@@ -1240,6 +1295,7 @@ async function exportToSheets(journeyId) {
       duration: formatTime(j.stats.duration),
       notes: j.notes || '',
       waypoints: waypointsStr,
+      routeImage: routeImage,
     };
 
     const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
