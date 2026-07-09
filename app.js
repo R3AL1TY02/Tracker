@@ -288,6 +288,7 @@ function initMap() {
     state.map.setView([51.505, -0.09], CONFIG.defaultZoom);
   });
 
+  setTimeout(() => state.map.invalidateSize(), 100);
   setTimeout(() => locateMap(), 500);
 }
 

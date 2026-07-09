@@ -233,11 +233,20 @@ html, body {
 /* ================================
    MAP VIEW
    ================================ */
-#map-view { position: relative; padding: 0; overflow: hidden !important; }
+#map-view {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
 
 #map {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
   z-index: 1;
 }
 
