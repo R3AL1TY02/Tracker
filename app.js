@@ -288,8 +288,10 @@ function initMap() {
     state.map.setView([51.505, -0.09], CONFIG.defaultZoom);
   });
 
-  setTimeout(() => state.map.invalidateSize(), 100);
-  setTimeout(() => locateMap(), 500);
+  requestAnimationFrame(() => state.map.invalidateSize());
+  setTimeout(() => state.map.invalidateSize(), 600);
+  setTimeout(() => locateMap(), 800);
+  window.addEventListener('resize', () => state.map.invalidateSize());
 }
 
 function locateMap() {
@@ -1152,9 +1154,9 @@ function switchTab(tab) {
   if (tab === 'history') renderHistory(document.getElementById('history-search-input').value.trim());
   if (tab === 'stats') renderStats();
   if (tab === 'map') {
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       if (state.map) state.map.invalidateSize();
-    }, 300);
+    });
   }
 }
 
