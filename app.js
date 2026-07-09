@@ -550,7 +550,10 @@ function beginTracking() {
 }
 
 function onPosition(pos) {
-  if (pos.coords.accuracy > 100 && state.points.length > 3) return;
+  if (pos.coords.accuracy > 100 && state.points.length > 3) {
+    updateLiveStats();
+    return;
+  }
 
   if (state.points.length > 0) {
     const last = state.points[state.points.length - 1];
@@ -558,11 +561,12 @@ function onPosition(pos) {
       { lat: last.lat, lng: last.lng },
       { lat: pos.coords.latitude, lng: pos.coords.longitude }
     );
-    if (dist < 2) return;
+    if (dist < 2) { updateLiveStats(); return; }
     const speed = pos.coords.speed;
     if (dist < 4 && speed !== null && speed < 0.5) {
       state.currentPosition = pos;
       updateUserMarker([pos.coords.latitude, pos.coords.longitude], pos.coords.heading);
+      updateLiveStats();
       return;
     }
   }
@@ -1282,7 +1286,7 @@ function updateSummarySheetBtn() {
 
 function captureRouteCanvas(points) {
   if (!points || points.length < 2) return '';
-  const W = 480, H = 240;
+  const W = 320, H = 160;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
@@ -1313,7 +1317,7 @@ function captureRouteCanvas(points) {
   }
 
   ctx.strokeStyle = '#4d9fff';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.beginPath();
@@ -1322,9 +1326,9 @@ function captureRouteCanvas(points) {
 
   const drawMarker = (x, y, label, color) => {
     ctx.fillStyle = color;
-    ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 7px Arial';
+    ctx.font = 'bold 6px Arial';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(label, x, y);
   };
