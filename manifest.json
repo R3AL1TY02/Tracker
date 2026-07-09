@@ -1,6 +1,6 @@
 {
-  "name": "Duty Log",
-  "short_name": "Duty Log",
+  "name": "Magic App",
+  "short_name": "Magic App",
   "description": "Record patrol routes, mark call-outs, and log duty shifts with GPS",
   "start_url": "./index.html",
   "display": "standalone",
