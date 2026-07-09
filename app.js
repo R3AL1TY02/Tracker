@@ -526,7 +526,7 @@ function onPosition(pos) {
     );
     if (dist < 2) return;
     const speed = pos.coords.speed;
-    if (dist < 10 && (speed === null || speed < 0.5)) {
+    if (dist < 4 && (speed === null || speed < 0.5)) {
       state.currentPosition = pos;
       updateUserMarker([pos.coords.latitude, pos.coords.longitude], pos.coords.heading);
       return;
