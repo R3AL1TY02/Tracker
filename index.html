@@ -49,9 +49,14 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:6px"><path d="M8 5v14l11-7z"/></svg>
           Start Tracking
         </button>
-        <button class="btn btn-icon" id="photo-btn" style="width:44px;height:44px;border-radius:50%;background:var(--bg-card);box-shadow:var(--shadow-lg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-primary);font-size:20px" aria-label="Take photo">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
-        </button>
+        <div class="map-action-row">
+          <button class="btn btn-icon" id="waypoint-btn" style="display:none;width:44px;height:44px;border-radius:50%;background:var(--bg-card);box-shadow:var(--shadow-lg);border:none;cursor:pointer;align-items:center;justify-content:center;color:var(--accent);font-size:20px" aria-label="Add waypoint">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          </button>
+          <button class="btn btn-icon" id="photo-btn" style="width:44px;height:44px;border-radius:50%;background:var(--bg-card);box-shadow:var(--shadow-lg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-primary);font-size:20px" aria-label="Take photo">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -182,6 +187,23 @@
         <div style="display:flex;gap:10px;margin-top:8px">
           <button class="btn btn-primary" id="name-confirm-btn" style="flex:1">Start Tracking</button>
           <button class="btn btn-ghost" id="name-cancel-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== WAYPOINT OVERLAY ===== -->
+    <div class="overlay" id="waypoint-overlay">
+      <div class="overlay-sheet">
+        <div class="sheet-handle"></div>
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:4px">Add Waypoint</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Note where you're headed or what caught your attention</p>
+        <div class="input-group">
+          <label>Note</label>
+          <input type="text" id="waypoint-note-input" placeholder="e.g. Turning onto High Street, stopped for coffee..." autocomplete="off">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <button class="btn btn-primary" id="waypoint-save-btn" style="flex:1">Add Waypoint</button>
+          <button class="btn btn-ghost" id="waypoint-cancel-btn">Cancel</button>
         </div>
       </div>
     </div>

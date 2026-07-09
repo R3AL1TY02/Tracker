@@ -80,6 +80,8 @@ html, body {
 @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes dotPulse { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
 
 /* === Header === */
 .header {
@@ -139,6 +141,15 @@ html, body {
 .tab-item svg { width: 24px; height: 24px; fill: currentColor; transition: fill var(--transition); }
 .tab-item.active { color: var(--accent); }
 .tab-item.active svg { fill: var(--accent); }
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  width: 20px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+}
 
 /* === Buttons === */
 .btn {
@@ -200,6 +211,7 @@ html, body {
   padding: 16px;
   box-shadow: var(--shadow);
   margin-bottom: 12px;
+  animation: scaleIn 0.2s ease;
 }
 .card-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
 
@@ -243,6 +255,15 @@ html, body {
 }
 .map-controls > * { pointer-events: auto; }
 
+.map-action-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 400px;
+}
+
 .live-stats {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
@@ -257,6 +278,7 @@ html, body {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 0.5px solid var(--border);
+  animation: slideDown 0.3s ease;
 }
 .live-stat { text-align: center; }
 .live-stat-value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
@@ -380,6 +402,43 @@ html, body {
 .input-group textarea { resize: vertical; min-height: 60px; }
 
 /* ================================
+   WAYPOINT STYLES
+   ================================ */
+.waypoint-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.waypoint-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.waypoint-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #af52de;
+  flex-shrink: 0;
+  margin-top: 5px;
+  box-shadow: 0 0 0 3px rgba(175, 82, 222, 0.2);
+}
+.waypoint-body {
+  flex: 1;
+}
+.waypoint-note {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+.waypoint-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ================================
    HISTORY VIEW
    ================================ */
 #history-view { padding: 0; }
@@ -414,12 +473,28 @@ html, body {
   cursor: pointer;
   transition: transform var(--transition), box-shadow var(--transition);
   position: relative;
+  animation: scaleIn 0.2s ease;
 }
 .journey-card:active { transform: scale(0.98); }
 .journey-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
 .journey-card-name { font-size: 16px; font-weight: 600; }
 .journey-card-date { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 .journey-card-stats { display: flex; gap: 12px; font-size: 13px; color: var(--text-secondary); }
+.journey-card-tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.journey-card-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.journey-card-tag.photos { background: rgba(175, 82, 222, 0.12); color: #af52de; }
+.journey-card-tag.waypoints { background: rgba(255, 159, 10, 0.12); color: var(--warning); }
 .journey-card-actions { display: flex; gap: 8px; margin-top: 10px; }
 .journey-card-fav {
   position: absolute;
@@ -459,6 +534,7 @@ html, body {
   margin-bottom: 20px;
   text-align: center;
   color: white;
+  animation: scaleIn 0.3s ease;
 }
 .stats-hero-value { font-size: 48px; font-weight: 800; letter-spacing: -1px; }
 .stats-hero-label { font-size: 14px; opacity: 0.8; margin-top: 4px; }
@@ -521,6 +597,7 @@ html, body {
   display: none;
   flex-direction: column;
   padding-top: var(--safe-top);
+  animation: fadeIn 0.2s ease;
 }
 #detail-view.open { display: flex; }
 #detail-map { flex: 1; min-height: 250px; }
@@ -546,6 +623,12 @@ html, body {
 /* === Leaflet overrides === */
 .leaflet-control-zoom a { background: var(--bg-card) !important; color: var(--text-primary) !important; border-color: var(--border) !important; }
 .leaflet-control-attribution { display: none !important; }
+
+/* === Waypoint marker on map === */
+.waypoint-marker-icon {
+  background: none !important;
+  border: none !important;
+}
 
 /* === Responsive === */
 @media (min-width: 768px) {

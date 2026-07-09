@@ -29,6 +29,8 @@ const state = {
   elapsed: 0,
   photoMarkers: [],
   pendingPhotos: [],
+  pendingWaypoints: [],
+  waypointMarkers: [],
   firstName: localStorage.getItem('jt-firstname') || '',
   lastName: localStorage.getItem('jt-lastname') || '',
 };
@@ -104,6 +106,12 @@ const store = {
 // ─── Utilities ─────────────────────────────────────────────────
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 function formatTime(seconds) {
@@ -424,6 +432,20 @@ function addPhotoMarker(photo, map) {
   return marker;
 }
 
+function addWaypointMarker(waypoint, m) {
+  if (!m) m = state.map;
+  if (!m) return null;
+  const icon = L.divIcon({
+    className: 'waypoint-marker-icon',
+    html: `<div style="width:28px;height:28px;border-radius:50%;background:#af52de;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700;">!</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+  const marker = L.marker([waypoint.lat, waypoint.lng], { icon }).addTo(m);
+  marker.bindPopup(`<div style="font-size:14px;font-weight:600;max-width:200px">${escapeHtml(waypoint.note)}</div><div style="font-size:12px;color:#8e8e93;margin-top:4px">${new Date(waypoint.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>`);
+  return marker;
+}
+
 // ─── Tracker ───────────────────────────────────────────────────
 function startTracking() {
   if (state.isTracking) return;
@@ -462,6 +484,9 @@ function beginTracking() {
   state.elapsed = 0;
   state.photoMarkers.forEach(m => state.map.removeLayer(m));
   state.photoMarkers = [];
+  state.waypointMarkers.forEach(m => state.map.removeLayer(m));
+  state.waypointMarkers = [];
+  state.pendingWaypoints = [];
   clearRoute();
 
   document.getElementById('track-btn').className = 'tracking-btn stop';
@@ -471,6 +496,7 @@ function beginTracking() {
     </svg>
     Stop Tracking`;
   document.getElementById('live-stats').style.display = 'flex';
+  document.getElementById('waypoint-btn').style.display = 'flex';
 
   const interval = settings.interval || CONFIG.defaultInterval;
   state.watchId = navigator.geolocation.watchPosition(
@@ -569,6 +595,10 @@ function stopTracking() {
 
   if (state.points.length < 2) {
     document.getElementById('live-stats').style.display = 'none';
+    document.getElementById('waypoint-btn').style.display = 'none';
+    state.waypointMarkers.forEach(m => state.map.removeLayer(m));
+    state.waypointMarkers = [];
+    state.pendingWaypoints = [];
     return;
   }
 
@@ -629,13 +659,16 @@ function saveJourney() {
       ? { lat: state.points[state.points.length - 1].lat, lng: state.points[state.points.length - 1].lng }
       : null,
     photos: state.pendingPhotos || [],
+    waypoints: state.pendingWaypoints || [],
   };
 
   store.insert(journey);
   closeSummary();
   document.getElementById('live-stats').style.display = 'none';
+  document.getElementById('waypoint-btn').style.display = 'none';
   state.points = [];
   state.pendingPhotos = [];
+  state.pendingWaypoints = [];
   renderHistory();
   renderStats();
   updateSummarySheetBtn();
@@ -677,6 +710,11 @@ function renderHistory(query) {
           <span>${formatDistance(d.totalDistance)}</span>
           <span>${formatTime(d.duration)}</span>
         </div>
+        ${(j.photos?.length || j.waypoints?.length) ? `
+        <div class="journey-card-tags">
+          ${j.photos?.length ? `<span class="journey-card-tag photos">${j.photos.length} photo</span>` : ''}
+          ${j.waypoints?.length ? `<span class="journey-card-tag waypoints">${j.waypoints.length} waypoint</span>` : ''}
+        </div>` : ''}
         <div class="journey-card-actions">
           <button class="btn btn-ghost share-journey-btn" data-id="${j.id}" style="padding:6px 12px;font-size:12px">Share</button>
           <button class="btn btn-ghost export-journey-btn" data-id="${j.id}" style="padding:6px 12px;font-size:12px">GPX</button>
@@ -760,6 +798,9 @@ function openDetail(journeyId) {
       });
       L.marker(journey.points[0], { icon: startIcon }).addTo(map);
       L.marker(journey.points[journey.points.length - 1], { icon: endIcon }).addTo(map);
+      if (journey.waypoints && journey.waypoints.length) {
+        journey.waypoints.forEach(w => addWaypointMarker(w, map));
+      }
       const bounds = L.latLngBounds(latlngs);
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
     } else {
@@ -797,6 +838,20 @@ function openDetail(journeyId) {
       <div class="stat-row">
         <div class="stat-item"><div class="stat-value" style="font-size:13px">${journey.startLocation.lat.toFixed(4)}, ${journey.startLocation.lng.toFixed(4)}</div><div class="stat-label">Start</div></div>
         <div class="stat-item"><div class="stat-value" style="font-size:13px">${journey.finishLocation.lat.toFixed(4)}, ${journey.finishLocation.lng.toFixed(4)}</div><div class="stat-label">Finish</div></div>
+      </div>
+    </div>` : ''}
+    ${journey.waypoints && journey.waypoints.length ? `
+    <div class="card">
+      <div class="card-title">Waypoints (${journey.waypoints.length})</div>
+      <div class="waypoint-list">
+        ${journey.waypoints.map(w => `
+        <div class="waypoint-item">
+          <div class="waypoint-dot"></div>
+          <div class="waypoint-body">
+            <div class="waypoint-note">${escapeHtml(w.note)}</div>
+            <div class="waypoint-time">${new Date(w.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+          </div>
+        </div>`).join('')}
       </div>
     </div>` : ''}
     ${journey.photos && journey.photos.length ? `
@@ -892,6 +947,21 @@ function setupUI() {
   document.getElementById('locate-btn').addEventListener('click', locateMap);
   document.getElementById('photo-btn').addEventListener('click', capturePhoto);
 
+  // Waypoint
+  document.getElementById('waypoint-btn').addEventListener('click', () => {
+    if (!state.isTracking) return;
+    document.getElementById('waypoint-note-input').value = '';
+    document.getElementById('waypoint-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('waypoint-note-input').focus(), 300);
+  });
+  document.getElementById('waypoint-save-btn').addEventListener('click', addWaypoint);
+  document.getElementById('waypoint-cancel-btn').addEventListener('click', () => {
+    document.getElementById('waypoint-overlay').classList.remove('open');
+  });
+  document.getElementById('waypoint-note-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addWaypoint();
+  });
+
   // Name prompt
   document.getElementById('name-confirm-btn').addEventListener('click', confirmName);
   document.getElementById('name-cancel-btn').addEventListener('click', () => {
@@ -909,7 +979,9 @@ function setupUI() {
   document.getElementById('summary-discard-btn').addEventListener('click', () => {
     closeSummary();
     document.getElementById('live-stats').style.display = 'none';
+    document.getElementById('waypoint-btn').style.display = 'none';
     state.points = [];
+    state.pendingWaypoints = [];
   });
   document.getElementById('summary-sheet-btn').addEventListener('click', async () => {
     const btn = document.getElementById('summary-sheet-btn');
@@ -1172,6 +1244,25 @@ async function exportToSheets(journeyId) {
     alert('Export failed: ' + err.message + '\nMake sure your Google Sheets Web App URL is correct in Settings.');
   }
   updateSummarySheetBtn();
+}
+
+// ─── Waypoints ────────────────────────────────────────────
+function addWaypoint() {
+  if (!state.isTracking) return;
+  const note = document.getElementById('waypoint-note-input').value.trim();
+  if (!note) return;
+  const pos = state.currentPosition;
+  if (!pos) return;
+  const waypoint = {
+    lat: pos.coords.latitude,
+    lng: pos.coords.longitude,
+    time: Date.now(),
+    note,
+  };
+  state.pendingWaypoints.push(waypoint);
+  const marker = addWaypointMarker(waypoint);
+  if (marker) state.waypointMarkers.push(marker);
+  document.getElementById('waypoint-overlay').classList.remove('open');
 }
 
 // ─── Photo capture ─────────────────────────────────────────────
