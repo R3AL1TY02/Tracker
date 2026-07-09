@@ -295,7 +295,19 @@ function initMap() {
 }
 
 function locateMap() {
-  state.map.locate({ setView: true, maxZoom: CONFIG.defaultZoom, enableHighAccuracy: true });
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const ll = L.latLng(pos.coords.latitude, pos.coords.longitude);
+        state.map.setView(ll, CONFIG.defaultZoom);
+        onLocationFound({ latlng: ll, accuracy: pos.coords.accuracy, heading: pos.coords.heading });
+      },
+      () => state.map.setView([51.505, -0.09], CONFIG.defaultZoom),
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+    );
+  } else {
+    state.map.setView([51.505, -0.09], CONFIG.defaultZoom);
+  }
 }
 
 function updateUserMarker(latlng, heading) {
@@ -518,10 +530,13 @@ function beginTracking() {
   if (state.activeAbstraction) { updateAbstractionBtn(); }
 
   const interval = settings.interval || CONFIG.defaultInterval;
+  navigator.geolocation.getCurrentPosition(onPosition, () => {}, {
+    enableHighAccuracy: true, timeout: 5000, maximumAge: 0
+  });
   state.watchId = navigator.geolocation.watchPosition(
     onPosition,
     err => console.warn('GPS error:', err.message),
-    { enableHighAccuracy: true, timeout: interval + 2000, maximumAge: 0 }
+    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
   );
 
   state.timerInterval = setInterval(() => {
@@ -535,7 +550,7 @@ function beginTracking() {
 }
 
 function onPosition(pos) {
-  if (pos.coords.accuracy > 100 && state.points.length > 0) return;
+  if (pos.coords.accuracy > 100 && state.points.length > 3) return;
 
   if (state.points.length > 0) {
     const last = state.points[state.points.length - 1];
@@ -545,7 +560,7 @@ function onPosition(pos) {
     );
     if (dist < 2) return;
     const speed = pos.coords.speed;
-    if (dist < 4 && (speed === null || speed < 0.5)) {
+    if (dist < 4 && speed !== null && speed < 0.5) {
       state.currentPosition = pos;
       updateUserMarker([pos.coords.latitude, pos.coords.longitude], pos.coords.heading);
       return;
@@ -1470,8 +1485,25 @@ function onPhotoCaptured(e) {
 function registerSW() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')
-      .then(() => console.log('SW registered'))
+      .then(reg => {
+        if (reg.active) console.log('SW active');
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              newSW.postMessage({ action: 'skipWaiting' });
+            }
+          });
+        });
+      })
       .catch(err => console.warn('SW registration failed:', err));
+    let refreshing = false;
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing || !hadController) return;
+      refreshing = true;
+      window.location.reload();
+    });
   }
 }
 
