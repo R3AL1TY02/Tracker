@@ -1286,7 +1286,7 @@ function updateSummarySheetBtn() {
 
 function captureRouteCanvas(points) {
   if (!points || points.length < 2) return '';
-  const W = 80, H = 50;
+  const W = 110, H = 70;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
