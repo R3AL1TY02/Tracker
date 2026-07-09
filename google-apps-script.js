@@ -54,7 +54,7 @@ function doPost(e) {
     if (data.routeImage) {
       var base64 = data.routeImage.replace(/^data:image\/png;base64,/, '');
       var imageBlob = Utilities.newBlob(Utilities.base64Decode(base64), 'image/png', 'route.png');
-      sheet.insertImage(imageBlob, 2, 10);
+      sheet.insertImage(imageBlob, 10, 2);
     }
 
     var lastRow = sheet.getLastRow();

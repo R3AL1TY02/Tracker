@@ -1286,7 +1286,7 @@ function updateSummarySheetBtn() {
 
 function captureRouteCanvas(points) {
   if (!points || points.length < 2) return '';
-  const W = 320, H = 160;
+  const W = 120, H = 80;
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
@@ -1317,7 +1317,7 @@ function captureRouteCanvas(points) {
   }
 
   ctx.strokeStyle = '#4d9fff';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 1.5;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.beginPath();
@@ -1326,9 +1326,9 @@ function captureRouteCanvas(points) {
 
   const drawMarker = (x, y, label, color) => {
     ctx.fillStyle = color;
-    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 6px Arial';
+    ctx.font = 'bold 5px Arial';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(label, x, y);
   };
