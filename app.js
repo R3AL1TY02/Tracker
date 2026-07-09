@@ -124,15 +124,15 @@ function formatTime(seconds) {
 }
 
 function formatDate(ts) {
-  return new Date(ts).toLocaleDateString(undefined, {
-    weekday: 'short', month: 'short', day: 'numeric',
+  return new Date(ts).toLocaleDateString('en-GB', {
+    weekday: 'short', day: 'numeric', month: 'short',
     hour: '2-digit', minute: '2-digit'
   });
 }
 
 function formatDateTime(ts) {
-  return new Date(ts).toLocaleString(undefined, {
-    weekday: 'short', month: 'short', day: 'numeric',
+  return new Date(ts).toLocaleString('en-GB', {
+    weekday: 'short', day: 'numeric', month: 'short',
     hour: '2-digit', minute: '2-digit'
   });
 }
@@ -1229,7 +1229,7 @@ async function exportToSheets(journeyId) {
     const payload = {
       firstName: j.firstName || '',
       lastName: j.lastName || '',
-      date: new Date(j.date).toISOString().split('T')[0],
+      date: new Date(j.date).toLocaleDateString('en-GB'),
       name: j.name,
       distance: formatDistance(j.stats.totalDistance, 'km'),
       duration: formatTime(j.stats.duration),
