@@ -1225,6 +1225,12 @@ async function exportToSheets(journeyId) {
   if (btn) { btn.disabled = true; btn.textContent = 'Exporting...'; }
 
   try {
+    const waypointsStr = (j.waypoints && j.waypoints.length)
+      ? j.waypoints.map(w => {
+          const t = new Date(w.time).toLocaleString('en-GB');
+          return t + ' - ' + w.note;
+        }).join('\n')
+      : '';
     const payload = {
       firstName: j.firstName || '',
       lastName: j.lastName || '',
@@ -1233,6 +1239,7 @@ async function exportToSheets(journeyId) {
       distance: formatDistance(j.stats.totalDistance, 'km'),
       duration: formatTime(j.stats.duration),
       notes: j.notes || '',
+      waypoints: waypointsStr,
     };
 
     const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
