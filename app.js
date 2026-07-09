@@ -955,12 +955,12 @@ function setupUI() {
     document.getElementById('abstraction-overlay').classList.add('open');
     setTimeout(() => document.getElementById('abstraction-note-input').focus(), 300);
   });
-  document.getElementById('abstraction-save-btn').addEventListener('click', addWaypoint);
+document.getElementById('abstraction-save-btn').addEventListener('click', addAbstraction);
   document.getElementById('abstraction-cancel-btn').addEventListener('click', () => {
     document.getElementById('abstraction-overlay').classList.remove('open');
   });
-  document.getElementById('abstraction-note-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addWaypoint();
+  document.getElementById('abstraction-note-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') addAbstraction();
   });
 
   // Name prompt
