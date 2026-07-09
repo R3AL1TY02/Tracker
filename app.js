@@ -625,8 +625,8 @@ function showSummary() {
 
   document.getElementById('summary-name').value = `Journey ${formatDate(stats.startTime)}`;
   document.getElementById('summary-notes').value = '';
-  document.getElementById('summary-sheet-btn').textContent = 'Save & Export to Sheets';
-  document.getElementById('summary-sheet-btn').style.display = 'inline-flex';
+  document.getElementById('summary-word-btn').textContent = 'Save & Export to Word';
+  document.getElementById('summary-word-btn').style.display = 'inline-flex';
   document.getElementById('summary-overlay').classList.add('open');
 }
 
@@ -673,7 +673,7 @@ function saveJourney() {
   state.pendingAbstractions = [];
   renderHistory();
   renderStats();
-  updateSummarySheetBtn();
+  updateSummaryWordBtn();
   return journey;
 }
 
@@ -996,16 +996,16 @@ document.getElementById('abstraction-save-btn').addEventListener('click', addAbs
     state.points = [];
     state.pendingAbstractions = [];
   });
-  document.getElementById('summary-sheet-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('summary-sheet-btn');
+  document.getElementById('summary-word-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('summary-word-btn');
     btn.textContent = 'Saving...';
     btn.disabled = true;
     const journey = saveJourney();
     if (journey) {
-      await exportToSheets(journey.id);
+      await exportToWord(journey.id);
     }
     btn.disabled = false;
-    btn.textContent = 'Save & Export to Sheets';
+    btn.textContent = 'Save & Export to Word';
   });
 
   // History search
@@ -1058,8 +1058,8 @@ document.getElementById('abstraction-save-btn').addEventListener('click', addAbs
   document.getElementById('detail-export-btn').addEventListener('click', () => {
     exportJourney(state.detailJourney?.id);
   });
-  document.getElementById('detail-sheet-btn').addEventListener('click', () => {
-    exportToSheets(state.detailJourney?.id);
+  document.getElementById('detail-word-btn').addEventListener('click', () => {
+    exportToWord(state.detailJourney?.id);
   });
   document.getElementById('detail-delete-btn').addEventListener('click', () => {
     const j = state.detailJourney;
@@ -1201,62 +1201,131 @@ function importGPX(e) {
 }
 
 // ─── Google Sheets Export ──────────────────────────────────────
-function updateSummarySheetBtn() {
-  const btn = document.getElementById('summary-sheet-btn');
+function updateSummaryWordBtn() {
+  const btn = document.getElementById('summary-word-btn');
   if (!btn) return;
   const j = store.getAll()[0];
-  if (!j) { btn.style.display = 'none'; return; }
-  btn.style.display = j.sheetExported ? 'none' : 'inline-flex';
+  btn.style.display = j.wordExported ? 'none' : 'inline-flex';
 }
 
-async function exportToSheets(journeyId) {
+function generateWordDoc(j) {
+  const d = j.stats;
+  const dateStr = new Date(j.date).toLocaleDateString('en-GB');
+  const startStr = new Date(d.startTime).toLocaleString('en-GB');
+  const endStr = new Date(d.endTime).toLocaleString('en-GB');
+
+  let photoSection = '';
+  if (j.photos && j.photos.length) {
+    photoSection = `<h2 style="color:#0a1628;border-bottom:2px solid #4d9fff;padding-bottom:6px;margin-top:24px">Photos</h2>`;
+    j.photos.forEach((p, i) => {
+      if (p.dataUrl) {
+        photoSection += `<div style="margin:12px 0;text-align:center">
+          <img src="${p.dataUrl}" style="max-width:550px;border:1px solid #d0d7e0;border-radius:4px" alt="Photo ${i+1}"/>
+          <p style="font-size:10px;color:#888;margin:4px 0">Photo ${i+1}${p.lat ? ' \u2014 ' + p.lat.toFixed(5) + ', ' + p.lng.toFixed(5) : ''}</p>
+        </div>`;
+      }
+    });
+  }
+
+  let waypointSection = '';
+  if (j.waypoints && j.waypoints.length) {
+    waypointSection = `<h2 style="color:#0a1628;border-bottom:2px solid #4d9fff;padding-bottom:6px;margin-top:24px">Called Away</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:11pt">
+      <tr style="background:#0a1628;color:#fff">
+        <th style="padding:8px;text-align:left;border:1px solid #1e3a6b">Time</th>
+        <th style="padding:8px;text-align:left;border:1px solid #1e3a6b">Note</th>
+        <th style="padding:8px;text-align:left;border:1px solid #1e3a6b">Location</th>
+      </tr>`;
+    j.waypoints.forEach(w => {
+      const t = new Date(w.time).toLocaleString('en-GB');
+      waypointSection += `<tr>
+        <td style="padding:6px 8px;border:1px solid #d0d7e0;vertical-align:top">${t}</td>
+        <td style="padding:6px 8px;border:1px solid #d0d7e0;vertical-align:top">${escapeHtml(w.note)}</td>
+        <td style="padding:6px 8px;border:1px solid #d0d7e0;vertical-align:top">${w.lat.toFixed(5)}, ${w.lng.toFixed(5)}</td>
+      </tr>`;
+    });
+    waypointSection += `</table>`;
+  }
+
+  const avgSpeed = d.avgSpeed ? d.avgSpeed.toFixed(1) : '\u2014';
+  const maxSpeed = d.maxSpeed ? d.maxSpeed.toFixed(1) : '\u2014';
+
+  return `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+<style>
+  body { font-family:Calibri,Arial,sans-serif; font-size:11pt; margin:2cm 2.5cm; color:#1c1c1e; line-height:1.4 }
+  h1 { color:#0a1628; font-size:22pt; margin-bottom:4px }
+  .subtitle { color:#4d6180; font-size:10pt; margin-bottom:20px }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:10.5pt }
+  th { background:#0a1628; color:#fff; padding:8px 10px; text-align:left; border:1px solid #1e3a6b; font-weight:600 }
+  td { padding:7px 10px; border:1px solid #d0d7e0; vertical-align:top }
+  tr:nth-child(even) td { background:#f5f7fb }
+  .label { font-weight:600; color:#0a1628; white-space:nowrap; width:140px }
+  .footer { margin-top:30px; padding-top:12px; border-top:1px solid #d0d7e0; font-size:8pt; color:#8e8e93; text-align:center }
+</style>
+</head>
+<body>
+  <h1>Magic App \u2014 Patrol Report</h1>
+  <div class="subtitle">${escapeHtml(j.name)}</div>
+
+  <table>
+    <tr><th colspan="2" style="text-align:center">Patrol Summary</th></tr>
+    <tr><td class="label">Date</td><td>${dateStr}</td></tr>
+    <tr><td class="label">Officer</td><td>${escapeHtml(j.firstName || '')} ${escapeHtml(j.lastName || '')}</td></tr>
+    <tr><td class="label">Start</td><td>${startStr}</td></tr>
+    <tr><td class="label">End</td><td>${endStr}</td></tr>
+    <tr><td class="label">Duration</td><td>${formatTime(d.duration)}</td></tr>
+    <tr><td class="label">Distance</td><td>${formatDistance(d.totalDistance)}</td></tr>
+    <tr><td class="label">Avg Speed</td><td>${avgSpeed} km/h</td></tr>
+    <tr><td class="label">Max Speed</td><td>${maxSpeed} km/h</td></tr>
+    <tr><td class="label">GPS Points</td><td>${d.pointCount}</td></tr>
+  </table>
+
+  ${j.notes ? `<h2 style="color:#0a1628;border-bottom:2px solid #4d9fff;padding-bottom:6px;margin-top:20px">Notes</h2><p style="margin:8px 0">${escapeHtml(j.notes)}</p>` : ''}
+
+  ${waypointSection}
+  ${photoSection}
+
+  <div class="footer">
+    Generated by Magic App on ${new Date().toLocaleString('en-GB')}<br>
+    Patrol ref: ${j.id}
+  </div>
+</body>
+</html>`;
+}
+
+async function exportToWord(journeyId) {
   const j = journeyId ? store.get(journeyId) : store.getAll()[0];
   if (!j) { alert('No patrol to export.'); return; }
-  if (!settings.sheetsUrl) {
-    alert('Please set your Google Sheets Web App URL in Settings first.');
-    switchTab('settings');
-    return;
-  }
-  if (j.sheetExported) {
-    alert('Already exported to Google Sheets.');
-    return;
-  }
 
-  const btn = document.getElementById('summary-sheet-btn') || document.getElementById('detail-sheet-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Exporting...'; }
+  const btn = document.getElementById('summary-word-btn') || document.getElementById('detail-word-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
 
   try {
-    const payload = {
-      firstName: j.firstName || '',
-      lastName: j.lastName || '',
-      date: new Date(j.date).toLocaleDateString('en-GB'),
-      name: j.name,
-      distance: formatDistance(j.stats.totalDistance, 'km'),
-      duration: formatTime(j.stats.duration),
-      notes: j.notes || '',
-    };
+    const html = generateWordDoc(j);
+    const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (j.name || 'Patrol').replace(/[^a-z0-9]/gi, '_') + '.doc';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 
-    const formBody = 'data=' + encodeURIComponent(JSON.stringify(payload));
-    const res = await fetch(settings.sheetsUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formBody,
-    });
-    const text = await res.text();
-    let result;
-    try { result = JSON.parse(text); } catch (_) { result = { success: false, error: 'Bad response from Google (check your URL)' }; }
-    if (!result.success) {
-      throw new Error(result.error || 'Unknown error from Google Sheets');
-    }
-
-    store.update(j.id, { sheetExported: true });
-    if (btn) { btn.textContent = 'Exported ✅'; btn.style.opacity = '0.5'; }
-    alert('Patrol exported to Google Sheets!');
+    store.update(j.id, { wordExported: true });
+    if (btn) { btn.textContent = 'Exported \u2705'; btn.style.opacity = '0.5'; }
   } catch (err) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Export to Sheets'; }
-    alert('Export failed: ' + err.message + '\nMake sure your Google Sheets Web App URL is correct in Settings.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Export to Word'; }
+    alert('Export failed: ' + err.message);
   }
-  updateSummarySheetBtn();
+  updateSummaryWordBtn();
 }
 
 // ─── Waypoints ────────────────────────────────────────────
