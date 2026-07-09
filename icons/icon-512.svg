@@ -1,4 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="96" fill="#000000"/>
-  <text x="256" y="342" font-family="-apple-system,Helvetica Neue,Helvetica,Arial,sans-serif" font-size="320" font-weight="700" fill="white" text-anchor="middle">J</text>
+  <rect width="512" height="512" rx="96" fill="#0a1628"/>
+  <g transform="translate(256,256)" fill="none" stroke="#4d9fff" stroke-width="14" stroke-linecap="round">
+    <line x1="0" y1="-116" x2="0" y2="-42"/>
+    <line x1="0" y1="42" x2="0" y2="116"/>
+    <line x1="-116" y1="0" x2="-42" y2="0"/>
+    <line x1="42" y1="0" x2="116" y2="0"/>
+    <line x1="-82" y1="-82" x2="-28" y2="-28"/>
+    <line x1="28" y1="28" x2="82" y2="82"/>
+    <line x1="82" y1="-82" x2="28" y2="-28"/>
+    <line x1="-28" y1="28" x2="-82" y2="82"/>
+  </g>
+  <circle cx="348" cy="164" r="16" fill="#ff9f0a" opacity="0.9"/>
+  <circle cx="164" cy="348" r="12" fill="#ff9f0a" opacity="0.6"/>
+  <circle cx="368" cy="340" r="9" fill="#ff9f0a" opacity="0.4"/>
 </svg>
