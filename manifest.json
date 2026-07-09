@@ -13,31 +13,31 @@
   "dir": "ltr",
   "icons": [
     {
-      "src": "icons/icon-72.svg?v=2",
+      "src": "icons/icon-72.svg?v=3",
       "sizes": "72x72",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-96.svg?v=2",
+      "src": "icons/icon-96.svg?v=3",
       "sizes": "96x96",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-128.svg?v=2",
+      "src": "icons/icon-128.svg?v=3",
       "sizes": "128x128",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-192.svg?v=2",
+      "src": "icons/icon-192.svg?v=3",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-512.svg?v=2",
+      "src": "icons/icon-512.svg?v=3",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
