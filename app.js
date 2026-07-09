@@ -52,7 +52,7 @@ function getDefaultSettings() {
     interval: 2000,
     darkMode: true,
     follow: true,
-    sheetsUrl: 'https://script.google.com/macros/s/AKfycbzsWF6XqXl7PzMgVOepk-C_gD8TSRfhwUZIGAs_yI0kGkf8GJC6qFyGHwI_jrEPNCUR/exec',
+    sheetsUrl: 'https://script.google.com/macros/s/AKfycbyNDf1VvbgQqClITDiWAN7MNTyEHYSSvAi2MFQj6R_ToiQxtYb2eoicGpWxcUhrMoKu/exec',
     sheetViewUrl: 'https://docs.google.com/spreadsheets/d/1hrea0DWQ4zWtnKVBjF6-AOmbZ2k89M6PR6h8MP8PFyU/edit',
   };
 }
